@@ -6,6 +6,10 @@ Accounts-payable analysts spend disproportionate time on invoice exceptions rath
 
 The cost is not only overpayment. Analysts also spend time opening documents, comparing values, and writing back to suppliers. A useful harness should reduce investigation time without pretending that a model can make a safe payment decision by itself.
 
+The thesis is deliberately narrow: **an AP analyst should be able to resolve one suspicious invoice pair in minutes, with an evidence trail they can defend, instead of manually comparing several documents and guessing whether a resend is legitimate**.
+
+AI fits the unstructured part of the problem: invoices arrive in different layouts, and the meaning of a duplicate often depends on service periods, line descriptions, and context rather than one exact key. AI is not a good fit for the final payment decision, accounting policy, or irreversible ERP action; those remain deterministic or human-controlled.
+
 ## User and interface
 
 The user is an AP analyst working through a queue of exceptions. They want to know three things quickly:
@@ -58,8 +62,26 @@ The included fixtures cover:
 
 With more time, the next evaluation set would include scanned invoices, credit memos, currency formats, corrected invoice numbers, and intentionally conflicting OCR/model outputs. Metrics would be field extraction accuracy, duplicate false-positive rate, and the percentage of cases where an analyst can explain the suggested action from displayed evidence.
 
+For this vertical slice, the quality bar is intentionally observable rather than implied:
+
+- The deterministic path is covered by automated tests for extraction, amount parsing, duplicate scoring, recurrence, and conflict handling.
+- The demo contains both a likely resubmission and a legitimate recurring invoice so the harness has to distinguish them.
+- Every suggested classification exposes the signals that contributed to it.
+- Model disagreement is a visible state, not silently overwritten.
+- A reviewer can change one value in `samples/`, re-run the flow, and see the result move.
+
+The next useful evaluation step would be an annotated set of 20-30 synthetic invoices with expected fields and expected duplicate decisions. That would let us measure whether the model adds signal over the deterministic baseline instead of assuming that it does.
+
 ## Tradeoffs
 
 The browser-based OCR path avoids system-level Tesseract and Poppler dependencies, which makes cloning the repository simpler. The tradeoff is a larger first-load and the need to download WASM/language assets in the browser. The model adapter is server-side so API keys are not exposed, but it is optional and requires network access.
 
 The POC intentionally stops at a single analyst workspace. An ERP connector, persistence, permissions, audit logs, and outbound communications would be the next product layer, not prerequisites for demonstrating the harness.
+
+## Reflections
+
+Time spent: approximately one focused half-day on problem framing, implementation, documentation, and verification. The scope was kept intentionally small so the workflow could run end to end from a fresh clone.
+
+The least certain assumption is that the duplicate decision can be made from invoice documents alone. In a real AP environment, the payment ledger, goods-received record, credit memo history, and supplier-specific policy may be necessary. The harness therefore treats its result as a review queue signal, not an accounting truth.
+
+With more time, I would add real PDF fixtures from several layouts, a small labeled evaluation set, a review feedback loop, and an ERP export connector. I would also test whether the model path materially improves recall on scanned or irregular invoices before making it a default rather than an escalation path.
