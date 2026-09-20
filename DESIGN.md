@@ -87,6 +87,8 @@ The next useful evaluation step would be an annotated set of 20-30 synthetic inv
 
 The browser-based OCR path avoids system-level Tesseract and Poppler dependencies, which makes cloning the repository simpler. The tradeoff is a larger first-load and the need to download WASM/language assets in the browser. The model adapter is server-side so API keys are not exposed, but it is optional and requires network access.
 
+The repository also ships a multi-stage Docker image and Compose file. Docker packages the compiled UI and local agent API together so a reviewer can run the POC without matching the author's Node version. The tradeoff is the usual requirement that Docker Desktop or a compatible Docker runtime is installed.
+
 The POC intentionally stops at a single analyst workspace. An ERP connector, persistence, permissions, audit logs, and outbound communications would be the next product layer, not prerequisites for demonstrating the harness.
 
 ## Reflections

@@ -8,6 +8,33 @@ The product is intentionally a decision-support slice: it does not block a payme
 
 Requirements: Node.js 20 or newer.
 
+### Recommended: Docker
+
+Docker is the most reproducible path for reviewers. No local Node installation or API key is required:
+
+```bash
+docker compose up --build
+```
+
+Open `http://localhost:8787`. Stop it with:
+
+```bash
+docker compose down
+```
+
+The container runs the compiled front end and the local agent API together. It starts in deterministic demo mode, so the inbox, tool traces, memory, and sample review flow work without external services.
+
+To enable the optional vision model, create a local `.env` from `.env.example`, add the key, and start Compose again:
+
+```bash
+ANTHROPIC_API_KEY=your_key_here
+ANTHROPIC_MODEL=your_supported_vision_model
+```
+
+The `.env` file is ignored by Git and is not copied into the image.
+
+### Without Docker
+
 ```bash
 npm install
 npm run build
