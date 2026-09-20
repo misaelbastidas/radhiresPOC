@@ -1,0 +1,4 @@
+From: billing@papertrail.example
+Subject: Invoice attached - scan may be incomplete
+
+The second page contains the tax and total lines. Please confirm the extracted amount if the scan is difficult to read.

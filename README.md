@@ -1,6 +1,6 @@
 # Ledgerline / Invoice Exception Desk
 
-Ledgerline is a small, portable AI harness for accounts-payable analysts. It reviews a current invoice against reference invoices, extracts the important fields through two independent paths, and explains whether the pair looks like an accidental duplicate or a legitimate recurring charge.
+Ledgerline is a small, portable AI harness for accounts-payable analysts. It presents a simulated AP inbox on the left and a tool-using agent on the right. The agent reviews invoice attachments, extracts important fields through two independent paths, and explains whether a pair looks like an accidental duplicate or a legitimate recurring charge.
 
 The product is intentionally a decision-support slice: it does not block a payment, update an ERP, or send an email. It gives the analyst evidence and a safe next action.
 
@@ -14,7 +14,7 @@ npm run build
 npm start
 ```
 
-Open `http://localhost:8787`.
+Open `http://localhost:8787`. The first screen already includes ten synthetic inbox threads. Click a message to see the agent work on that context, then inspect the evidence workspace below.
 
 For frontend development, use two terminals:
 
@@ -29,6 +29,12 @@ npm run dev
 Then open `http://localhost:5173`.
 
 No API key is required. The sample pack and the editable fixtures in [`samples/`](samples/) run with the demo model adapter. The app labels that response clearly; it is not presented as a live model result.
+
+## Try the sample inbox
+
+The [`samples/inbox/`](samples/inbox/) folder is the simulated email intake layer. It contains ten editable message fixtures covering exact resubmissions, recurring charges, corrected invoices, missing POs, credit memos, changed amounts, and low-quality scans.
+
+The live UI loads these fixtures without needing an email provider. The first three threads link to editable invoice fixtures in `samples/`. This keeps the demo reproducible while making the future Gmail/Outlook connector boundary explicit.
 
 ## Try your own invoices
 
@@ -59,10 +65,12 @@ Real in this slice:
 - Parallel model adapter and field-level reconciliation.
 - Duplicate scoring using vendor, invoice number, amount, PO, dates, and service periods.
 - Local action state and review-note copy.
+- A conversational agent workspace over a simulated inbox with case-scoped prompts.
 
 Stubbed or deliberately omitted:
 
 - ERP/AP ledger integration.
+- A live Gmail, Outlook, or IMAP inbox connector; `samples/inbox/` is the transparent local stub.
 - Actual payment blocking or approval.
 - Email delivery.
 - Persistent database and user authentication.

@@ -1,0 +1,4 @@
+From: billing@medico.example
+Subject: Credit memo CM-204 applied to INV-7710
+
+Credit memo attached for returned equipment. The credit is related to the original invoice, but it is not a second invoice.

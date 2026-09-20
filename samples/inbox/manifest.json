@@ -1,0 +1,12 @@
+[
+  {"id":"mail-01","fixture":"exact-duplicate","sender":"Northstar Office Supply","subject":"Fwd: Invoice NS-1042 - January supplies","attachments":["../invoice-1042-resubmitted.txt"],"expected":"likely-duplicate"},
+  {"id":"mail-02","fixture":"duplicate-reference","sender":"Northstar Office Supply","subject":"Invoice NS-1042 attached","attachments":["../invoice-1042-original.txt"],"expected":"reference"},
+  {"id":"mail-03","fixture":"legitimate-recurring","sender":"Northstar Office Supply","subject":"Invoice NS-1043 - February supplies","attachments":["../invoice-1043-recurring.txt"],"expected":"legitimate-recurring"},
+  {"id":"mail-04","fixture":"corrected-invoice","sender":"Acme Industrial Parts","subject":"Corrected invoice INV-8812","attachments":[],"expected":"needs-review"},
+  {"id":"mail-05","fixture":"missing-po","sender":"Brightline Logistics","subject":"March freight invoice","attachments":[],"expected":"missing-evidence"},
+  {"id":"mail-06","fixture":"credit-memo","sender":"Medico Office Services","subject":"Credit memo CM-204 applied to INV-7710","attachments":[],"expected":"not-duplicate"},
+  {"id":"mail-07","fixture":"clear-invoice","sender":"Cedar & Co. Catering","subject":"Invoice 2026-031 - event services","attachments":[],"expected":"low-risk"},
+  {"id":"mail-08","fixture":"amount-changed","sender":"Atlas Components","subject":"Invoice AC-5520 - revised amount","attachments":[],"expected":"needs-review"},
+  {"id":"mail-09","fixture":"monthly-recurring","sender":"Evergreen Facilities","subject":"Monthly maintenance invoice - April","attachments":[],"expected":"legitimate-recurring"},
+  {"id":"mail-10","fixture":"noisy-scan","sender":"Papertrail Print Co.","subject":"Invoice attached - scan may be incomplete","attachments":[],"expected":"low-confidence"}
+]

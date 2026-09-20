@@ -12,13 +12,15 @@ AI fits the unstructured part of the problem: invoices arrive in different layou
 
 ## User and interface
 
-The user is an AP analyst working through a queue of exceptions. They want to know three things quickly:
+The user is an AP analyst working through a busy AP inbox. They want to know three things quickly:
 
 1. Why did this case get flagged?
 2. What evidence agrees or disagrees?
 3. What is the safest next step?
 
-The interface is a queue plus an evidence-first case workspace. It uses plain labels, side-by-side invoice metadata, a field-level extraction audit, and explicit actions. The result is useful even when the live model is unavailable.
+The interface is a simulated inbox plus an evidence-first agent workspace. The analyst selects a message on the left, and the agent explains what it found on the right before opening the document comparison. It uses plain labels, side-by-side invoice metadata, a field-level extraction audit, and explicit actions. The result is useful even when the live model is unavailable.
+
+The chat is intentionally scoped to the selected thread. It is not a general-purpose chatbot: the agent can use invoice-review capabilities, but every recommendation must connect back to the current email, attachment, or reference document.
 
 ## Harness architecture
 
@@ -38,6 +40,10 @@ PDF/text files
                           evidence + next action
 ```
 
+The future email connector is represented by `samples/inbox/`. In production, the connector would provide message text, attachments, sender, and thread metadata. In the POC, those inputs are local fixtures so anybody can clone the repo and reproduce the same agent behavior.
+
+The agent's capabilities are intentionally narrow: scan the inbox, extract an invoice, find similar invoices, compare evidence, validate totals, and prepare a draft next step. Context is assembled per thread rather than sending the whole inbox to the model. Session state contains the selected thread and recent review; a durable implementation would persist case decisions and supplier policy separately.
+
 The deterministic path is the control. It uses local extraction, rules, normalization, and arithmetic validation. The model path is parallel rather than hidden behind the OCR path so reviewers can see disagreement. A field is not treated as “more true” just because the model returned it; conflicts remain visible.
 
 The duplicate scorer is intentionally explainable. The strongest signals are same vendor, same invoice number, same total, same PO, and overlapping service period. A different service period suppresses duplicate confidence and supports the recurring-charge explanation.
@@ -51,6 +57,7 @@ The duplicate scorer is intentionally explainable. The strongest signals are sam
 - A missing API key leaves the deterministic path available and labels the demo adapter.
 - Uploaded PDF content is processed in the browser before an optional model request.
 - The app uses synthetic fixtures by default and does not persist documents.
+- The chat cannot execute payment, ERP, or outbound-email actions; those remain human-confirmed or out of scope.
 
 ## Evaluation
 

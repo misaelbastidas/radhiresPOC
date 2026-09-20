@@ -1,0 +1,4 @@
+From: facilities@evergreen.example
+Subject: Monthly maintenance invoice - April
+
+Routine maintenance services for April. This is part of the monthly service agreement.

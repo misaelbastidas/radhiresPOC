@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { buildDuplicatePairs, createSummary, FIELD_LABELS, getDemoDocuments, reconcileExtractions, valueOf } from './lib/invoiceEngine';
+import { inboxFixtures, inboxSummary } from './lib/inboxFixtures';
 import { extractPdfDocument, requestModelExtraction } from './lib/pdfPipeline';
 import './styles.css';
 
@@ -54,16 +55,20 @@ function App() {
   const inputRef = useRef(null);
   const [documents, setDocuments] = useState(() => finalizeDocuments(getDemoDocuments()));
   const [selectedPairId, setSelectedPairId] = useState(null);
+  const [selectedThreadId, setSelectedThreadId] = useState('mail-01');
   const [actions, setActions] = useState({});
   const [processing, setProcessing] = useState(null);
   const [notice, setNotice] = useState(null);
   const [modelConfigured, setModelConfigured] = useState(false);
 
   const pairs = useMemo(() => buildDuplicatePairs(documents), [documents]);
-  const summary = useMemo(() => createSummary(pairs, documents), [pairs, documents]);
-  const activePair = pairs.find((pair) => pair.id === selectedPairId) || pairs[0];
-  const activeFirst = documents.find((document) => document.id === activePair?.firstId) || documents[0];
-  const activeSecond = documents.find((document) => document.id === activePair?.secondId) || documents[1];
+  const inboxThreads = inboxFixtures;
+  const inboxStats = inboxSummary(inboxThreads);
+  const selectedThread = inboxThreads.find((thread) => thread.id === selectedThreadId) || inboxThreads[0];
+  const activePair = selectedThread?.pairId ? pairs.find((pair) => pair.id === selectedThread.pairId) : null;
+  const summary = useMemo(() => createSummary(activePair ? [activePair] : [], documents), [activePair, documents]);
+  const activeFirst = activePair ? documents.find((document) => document.id === activePair.firstId) : null;
+  const activeSecond = activePair ? documents.find((document) => document.id === activePair.secondId) : null;
   const activeAction = activePair ? actions[activePair.id] : null;
 
   useEffect(() => {
@@ -77,7 +82,9 @@ function App() {
   const loadDemo = () => {
     setDocuments(finalizeDocuments(getDemoDocuments()));
     setActions({});
-    setNotice({ tone: 'success', text: 'Loaded 3 synthetic invoices. The top pair is a deliberate resubmission.' });
+    setSelectedThreadId('mail-01');
+    setSelectedPairId(null);
+    setNotice({ tone: 'success', text: 'Loaded 10 synthetic inbox threads. Northstar is the deliberate duplicate case.' });
     setTimeout(() => setNotice(null), 4200);
   };
 
@@ -151,21 +158,20 @@ function App() {
           <button className="secondary-button" onClick={loadDemo}><span className="button-icon">↻</span> Load sample pack</button>
         </div>
 
-        <div className="queue-heading"><span>Exception queue</span><span className="queue-count">{pairs.length}</span></div>
+        <div className="queue-heading"><span>AP inbox</span><span className="queue-count">{inboxStats.total}</span></div>
         <div className="queue-list">
-          {pairs.map((pair) => {
-            const first = documents.find((document) => document.id === pair.firstId);
-            const action = actions[pair.id];
-            return <button key={pair.id} className={`queue-item ${activePair?.id === pair.id ? 'selected' : ''}`} onClick={() => setSelectedPairId(pair.id)}>
-              <div className="queue-item-top"><span className="queue-file">{first?.name?.replace('.pdf', '')}</span><span className="queue-score">{Math.round(pair.score * 100)}%</span></div>
-              <div className="queue-item-bottom"><StatusPill classification={pair.classification} /><span>{action ? 'Action saved' : `${pair.signals.length} signals`}</span></div>
+          {inboxThreads.map((thread) => {
+            return <button key={thread.id} className={`queue-item inbox-item ${selectedThread?.id === thread.id ? 'selected' : ''}`} onClick={() => { setSelectedThreadId(thread.id); setSelectedPairId(thread.pairId || null); }}>
+              <div className="queue-item-top"><span className="inbox-sender"><span className="sender-avatar">{thread.initials}</span><span className="queue-file">{thread.senderShort}</span></span><span className="inbox-time">{thread.time}</span></div>
+              <div className="inbox-subject">{thread.subject}</div>
+              <div className="queue-item-bottom"><span className={`inbox-tag ${thread.tone}`}>{thread.tag}</span><span>{thread.attachments} attachment{thread.attachments === 1 ? '' : 's'}</span></div>
             </button>;
           })}
-          {!pairs.length && <div className="empty-queue">Import at least two PDFs to create a comparison.</div>}
+          {!inboxThreads.length && <div className="empty-queue">No messages in the sample inbox.</div>}
         </div>
 
         <div className="sidebar-footer">
-          <div className="portable-card"><div className="portable-icon">⌁</div><div><strong>Runs locally</strong><span>OCR stays in your browser. Model calls are optional.</span></div></div>
+          <div className="portable-card"><div className="portable-icon">⌁</div><div><strong>{inboxStats.attention} need attention</strong><span>The agent works from local sample threads. Model calls are optional.</span></div></div>
           <div className="footer-meta"><span>v0.1 harness</span><span>•</span><span>synthetic data</span></div>
         </div>
       </aside>
@@ -180,9 +186,10 @@ function App() {
           {notice && <div className={`notice ${notice.tone}`}><span>{notice.tone === 'success' ? '✓' : '!'}</span>{notice.text}</div>}
           {processing && <div className="processing-banner"><div className="spinner" /><div><strong>{processing.stage}</strong><span>{processing.detail}</span></div><div className="progress-track"><span style={{ width: `${Math.max(4, processing.progress)}%` }} /></div><span className="processing-percent">{Math.round(processing.progress)}%</span></div>}
 
-          <section className="page-intro"><div><div className="eyebrow">Review workspace <span>•</span> {documents.length} documents</div><h1>Resolve before it becomes a payment.</h1><p>Compare extraction paths, follow the evidence, and decide what needs a human touch.</p></div><button className="text-button" onClick={copyReviewNote}>Copy review note <span>↗</span></button></section>
+          <section className="page-intro"><div><div className="eyebrow">Agent workspace <span>•</span> {inboxStats.total} inbox threads</div><h1>Let the agent work the inbox.</h1><p>Ask about a thread, inspect the evidence, and keep the final decision with the analyst.</p></div><button className="text-button" onClick={copyReviewNote}>Copy review note <span>↗</span></button></section>
 
           {activePair && activeFirst && activeSecond ? <>
+            <AgentConsole thread={selectedThread} summary={summary} activeFirst={activeFirst} activeSecond={activeSecond} />
             <section className="decision-grid">
               <div className="decision-card">
                 <div className="card-kicker"><span className="alert-icon">!</span> Duplicate review</div>
@@ -203,7 +210,7 @@ function App() {
               <section className="panel evidence-panel"><div className="panel-header"><div><div className="panel-label">Extraction audit</div><h3>Where the result came from</h3></div><span className="confidence-summary"><span className="mini-dot green" /> Agreement boosts confidence</span></div><div className="table-wrap"><table><thead><tr><th>Field</th><th>OCR / rules</th><th>Vision model</th><th>Reconciled</th></tr></thead><tbody>{fieldOrder.map((key) => <EvidenceRow key={key} document={activeFirst} fieldKey={key} />)}</tbody></table></div></section>
               <section className="panel action-panel"><div className="panel-label">Human decision</div><h3>What should happen next?</h3><p className="action-copy">The harness prepares the evidence. You decide whether the exception is safe to clear.</p><div className="action-list"><button className={activeAction === 'Mark as duplicate' ? 'action-button chosen' : 'action-button'} onClick={() => chooseAction('Mark as duplicate')}><span className="action-symbol danger-symbol">×</span><span><strong>Mark as duplicate</strong><small>Keep payment blocked</small></span><span className="action-arrow">→</span></button><button className={activeAction === 'Request vendor confirmation' ? 'action-button chosen' : 'action-button'} onClick={() => chooseAction('Request vendor confirmation')}><span className="action-symbol warning-symbol">↗</span><span><strong>Request vendor confirmation</strong><small>Draft a clarification email</small></span><span className="action-arrow">→</span></button><button className={activeAction === 'Mark as legitimate recurring' ? 'action-button chosen' : 'action-button'} onClick={() => chooseAction('Mark as legitimate recurring')}><span className="action-symbol success-symbol">✓</span><span><strong>Mark as legitimate recurring</strong><small>Clear this exception</small></span><span className="action-arrow">→</span></button></div><div className="guardrail-note"><span>◈</span><span><strong>No payment action taken</strong> This POC only saves the decision in the current session.</span></div></section>
             </div>
-          </> : <EmptyState onImport={() => inputRef.current?.click()} />}
+          </> : <><AgentConsole thread={selectedThread} summary={summary} /><section className="empty-state compact-empty"><div className="empty-illustration"><span>✓</span><span>⌁</span></div><h2>Thread triaged without a duplicate pair</h2><p>The agent has captured the message context. Select a thread with a duplicate or recurring signal to open the full evidence workspace.</p></section></>}
         </div>
       </main>
     </div>
@@ -211,7 +218,19 @@ function App() {
 }
 
 function DocumentCard({ document, label }) {
-  return <div className="document-card"><div className="document-card-head"><span className="document-label">{label}</span><span className="file-type">PDF</span></div><div className="document-name"><span className="pdf-icon">▤</span><span>{document.name}</span></div><div className="document-stats"><span>{document.pages?.length || 1} page{document.pages?.length === 1 ? '' : 's'}</span><span>•</span><span>{document.extractionMethod || 'sample'}</span></div><div className="doc-total"><span>Reported total</span><strong>{money(valueOf(document.reconciled || document.deterministic, 'total'))}</strong></div></div>;
+  const type = document.name?.toLowerCase().endsWith('.txt') || document.name?.toLowerCase().endsWith('.md') ? 'TXT' : 'PDF';
+  return <div className="document-card"><div className="document-card-head"><span className="document-label">{label}</span><span className="file-type">{type}</span></div><div className="document-name"><span className="pdf-icon">▤</span><span>{document.name}</span></div><div className="document-stats"><span>{document.pages?.length || 1} page{document.pages?.length === 1 ? '' : 's'}</span><span>•</span><span>{document.extractionMethod || 'sample'}</span></div><div className="doc-total"><span>Reported total</span><strong>{money(valueOf(document.reconciled || document.deterministic, 'total'))}</strong></div></div>;
+}
+
+function AgentConsole({ thread, summary, activeFirst, activeSecond }) {
+  const hasDuplicateCase = thread?.pairId && summary.classification === 'likely-duplicate';
+  return <section className="agent-console">
+    <div className="agent-console-header"><div className="agent-identity"><div className="agent-avatar"><span /><span /><span /></div><div><strong>Ledgerline Agent</strong><span>Working on the selected thread</span></div></div><div className="agent-mode"><span className="agent-pulse" /> tool-using workspace</div></div>
+    <div className="agent-conversation">
+      <div className="agent-message"><div className="agent-message-avatar">LL</div><div className="agent-bubble"><div className="agent-bubble-meta">Agent · just now</div><p>{thread?.agentMessage || 'Select a thread from the inbox and I will inspect its attachments.'}</p>{hasDuplicateCase && <div className="agent-result-card"><div className="agent-result-top"><span className="result-symbol">!</span><div><strong>Possible duplicate found</strong><span>{activeFirst?.name} ↔ {activeSecond?.name}</span></div><span className="result-confidence">{Math.round(summary.score * 100)}%</span></div><div className="agent-result-signals">{summary.signals.slice(0, 4).map((signal) => <span key={signal}>✓ {signal}</span>)}</div></div>}</div></div>
+      <div className="agent-prompt"><span>Try asking</span><button>Why was this flagged?</button><button>Compare the evidence</button><button>Draft a vendor reply</button></div>
+    </div>
+  </section>;
 }
 
 function EvidenceRow({ document, fieldKey }) {
