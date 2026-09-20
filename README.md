@@ -54,6 +54,19 @@ PORT=8787
 
 Restart `npm start`. The API key stays server-side; it is never placed in browser code.
 
+## Agent API surface
+
+The local server exposes the capabilities used by the workspace:
+
+- `GET /api/inbox` returns the simulated AP inbox.
+- `GET /api/capabilities` lists the agent's allowed tools.
+- `POST /api/agent/run` runs a case-scoped agent turn.
+- `POST /api/reviews` saves a human decision in the current local session.
+- `GET /api/memory?threadId=...` inspects the current case memory.
+- `POST /api/model-extract` runs the optional vision extraction adapter.
+
+The first agent loop is deterministic and local so the repository works without a model key. It already exposes tool traces, case-scoped memory, and output guardrails. The model adapter can be introduced behind the same capability boundary without changing the front-end contract.
+
 ## What is real vs. stubbed
 
 Real in this slice:
@@ -66,11 +79,13 @@ Real in this slice:
 - Duplicate scoring using vendor, invoice number, amount, PO, dates, and service periods.
 - Local action state and review-note copy.
 - A conversational agent workspace over a simulated inbox with case-scoped prompts.
+- Local agent APIs for inbox, capabilities, tool traces, review decisions, and case memory.
 
 Stubbed or deliberately omitted:
 
 - ERP/AP ledger integration.
 - A live Gmail, Outlook, or IMAP inbox connector; `samples/inbox/` is the transparent local stub.
+- A fully autonomous planning loop; the first agent loop is deliberately controlled and deterministic.
 - Actual payment blocking or approval.
 - Email delivery.
 - Persistent database and user authentication.

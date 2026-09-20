@@ -2,6 +2,8 @@ import http from 'node:http';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { getAgentCapabilities, getReviewMemory, runAgentTurn, saveReviewDecision } from './server/agentEngine.mjs';
+import { inboxFixtures } from './src/lib/inboxFixtures.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 8787);
@@ -202,6 +204,30 @@ const server = http.createServer(async (request, response) => {
         modelConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
         model: process.env.ANTHROPIC_MODEL || null
       });
+    }
+
+    if (url.pathname === '/api/inbox' && request.method === 'GET') {
+      return sendJson(response, 200, { source: 'local-simulated-inbox', threads: inboxFixtures });
+    }
+
+    if (url.pathname === '/api/capabilities' && request.method === 'GET') {
+      return sendJson(response, 200, { capabilities: getAgentCapabilities() });
+    }
+
+    if (url.pathname === '/api/agent/run' && request.method === 'POST') {
+      const payload = JSON.parse(await readBody(request, 2 * 1024 * 1024));
+      if (!payload.threadId || !payload.message) return sendJson(response, 400, { error: 'threadId and message are required.' });
+      return sendJson(response, 200, runAgentTurn(payload));
+    }
+
+    if (url.pathname === '/api/reviews' && request.method === 'POST') {
+      const payload = JSON.parse(await readBody(request, 256 * 1024));
+      if (!payload.threadId || !payload.action) return sendJson(response, 400, { error: 'threadId and action are required.' });
+      return sendJson(response, 200, saveReviewDecision(payload));
+    }
+
+    if (url.pathname === '/api/memory' && request.method === 'GET') {
+      return sendJson(response, 200, getReviewMemory(url.searchParams.get('threadId') || ''));
     }
 
     if (url.pathname === '/api/model-extract' && request.method === 'POST') {

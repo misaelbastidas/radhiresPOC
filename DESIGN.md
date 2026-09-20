@@ -44,6 +44,10 @@ The future email connector is represented by `samples/inbox/`. In production, th
 
 The agent's capabilities are intentionally narrow: scan the inbox, extract an invoice, find similar invoices, compare evidence, validate totals, and prepare a draft next step. Context is assembled per thread rather than sending the whole inbox to the model. Session state contains the selected thread and recent review; a durable implementation would persist case decisions and supplier policy separately.
 
+The back end now exposes those capabilities as explicit local APIs. A chat turn is not a direct free-form model call: it enters an agent controller, which selects an allowlisted tool sequence, returns a structured assistant message, and records a bounded case-scoped memory entry. This makes the harness inspectable in a demo and gives a future model a safe boundary to operate inside.
+
+The initial loop is intentionally deterministic. It is a vertical slice of the control plane, not a claim that the agent already plans arbitrary work. The vision model remains an optional extraction tool. The next model-backed step would be to let a model select among the same tools while keeping the controller responsible for schemas, evidence, and confirmation boundaries.
+
 The deterministic path is the control. It uses local extraction, rules, normalization, and arithmetic validation. The model path is parallel rather than hidden behind the OCR path so reviewers can see disagreement. A field is not treated as “more true” just because the model returned it; conflicts remain visible.
 
 The duplicate scorer is intentionally explainable. The strongest signals are same vendor, same invoice number, same total, same PO, and overlapping service period. A different service period suppresses duplicate confidence and supports the recurring-charge explanation.
