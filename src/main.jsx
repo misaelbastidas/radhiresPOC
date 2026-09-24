@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { buildDuplicatePairs, createSummary, FIELD_LABELS, getDemoDocuments, reconcileExtractions, valueOf } from './lib/invoiceEngine';
+import { buildDuplicatePairs, createSummary, FIELD_LABELS, reconcileExtractions, valueOf } from './lib/invoiceEngine';
 import { inboxFixtures, inboxSummary } from './lib/inboxFixtures';
+import { MAX_AGENT_DOCUMENTS, validateSelectedInvoiceFiles } from './lib/agentPolicy';
 import { extractPdfDocument, requestModelExtraction } from './lib/pdfPipeline';
 import './styles.css';
 
@@ -68,7 +69,7 @@ function ScoreRing({ score }) {
 function App() {
   const inputRef = useRef(null);
   const sampleDocumentCache = useRef(new Map());
-  const [documents, setDocuments] = useState(() => finalizeDocuments(getDemoDocuments()));
+  const [documents, setDocuments] = useState([]);
   const [selectedThreadId, setSelectedThreadId] = useState('mail-01');
   const [inboxThreads, setInboxThreads] = useState(inboxFixtures);
   const [actions, setActions] = useState({});
@@ -77,6 +78,8 @@ function App() {
   const [modelConfigured, setModelConfigured] = useState(false);
   const [agentActivity, setAgentActivity] = useState(null);
   const [agentBusy, setAgentBusy] = useState(false);
+  const workTokenRef = useRef(0);
+  const agentRequestRef = useRef(0);
 
   const pairs = useMemo(() => buildDuplicatePairs(documents), [documents]);
   const inboxStats = inboxSummary(inboxThreads);
@@ -87,6 +90,13 @@ function App() {
   const activeFirst = activePair ? documents.find((document) => document.id === activePair.firstId) : null;
   const activeSecond = activePair ? documents.find((document) => document.id === activePair.secondId) : null;
   const activeAction = activePair ? actions[activePair.id] : null;
+  const workspaceBusy = agentBusy || Boolean(processing);
+
+  const invalidateWork = () => {
+    workTokenRef.current += 1;
+    agentRequestRef.current += 1;
+    return workTokenRef.current;
+  };
 
   useEffect(() => {
     fetch('/api/health').then((response) => response.json()).then((body) => setModelConfigured(Boolean(body.modelConfigured))).catch(() => {});
@@ -102,28 +112,36 @@ function App() {
   }, [selectedThreadId, inboxThreads]);
 
   const loadSampleThread = async (thread) => {
+    const workToken = invalidateWork();
     const cacheKey = thread.sampleFiles.join('|');
     const cached = sampleDocumentCache.current.get(cacheKey);
     if (cached) {
       setDocuments(cached);
+      setProcessing(null);
       return cached;
     }
 
+    setDocuments([]);
+    setAgentActivity(null);
     setProcessing({ stage: 'Loading sample PDFs', progress: 0, detail: thread.subject });
     const next = [];
+    const isCurrentWork = () => workTokenRef.current === workToken;
     try {
       for (const [index, fileName] of thread.sampleFiles.entries()) {
+        if (!isCurrentWork()) return null;
         const response = await fetch(`/api/sample-file?name=${encodeURIComponent(fileName)}`);
         if (!response.ok) throw new Error(`Could not load sample PDF ${fileName}.`);
         const blob = await response.blob();
         const file = new File([blob], fileName, { type: 'application/pdf' });
         const parsed = await extractPdfDocument(file, (progress) => {
+          if (!isCurrentWork()) return;
           setProcessing({
             stage: progress.stage === 'ocr' ? 'OCR on device' : 'Reading PDF',
             progress: ((index + progress.progress) / thread.sampleFiles.length) * 85,
             detail: `${fileName} · page ${progress.page || 1} of ${progress.total || 1}`
           });
         });
+        if (!isCurrentWork()) return null;
         setProcessing({ stage: 'Model extraction', progress: ((index + 0.9) / thread.sampleFiles.length) * 100, detail: `${fileName} · comparing extraction paths` });
         let model = {};
         try {
@@ -135,12 +153,13 @@ function App() {
         }
         next.push({ ...parsed, model });
       }
+      if (!isCurrentWork()) return null;
       const finalized = finalizeDocuments(next);
       sampleDocumentCache.current.set(cacheKey, finalized);
       setDocuments(finalized);
       return finalized;
     } finally {
-      setProcessing(null);
+      if (isCurrentWork()) setProcessing(null);
     }
   };
 
@@ -158,25 +177,33 @@ function App() {
   };
 
   const processFiles = async (event) => {
-    const files = Array.from(event.target.files || []);
-    if (!files.length) return;
-    if (files.some((file) => !/\.pdf$/i.test(file.name))) {
-      setNotice({ tone: 'warning', text: 'Only PDF invoice files are supported in the analyst workspace.' });
+    const selection = validateSelectedInvoiceFiles(event.target.files);
+    const files = selection.value || [];
+    if (!selection.ok) {
+      setNotice({ tone: 'warning', text: selection.error });
       event.target.value = '';
       return;
     }
+    if (!files.length) return;
+    const workToken = invalidateWork();
+    const isCurrentWork = () => workTokenRef.current === workToken;
+    setDocuments([]);
+    setAgentActivity(null);
     setProcessing({ stage: 'Starting', progress: 0, detail: 'Preparing local PDF extraction...' });
     setNotice(null);
     const next = [];
     try {
       for (const [index, file] of files.entries()) {
+        if (!isCurrentWork()) return;
         const parsed = await extractPdfDocument(file, (progress) => {
+          if (!isCurrentWork()) return;
           setProcessing({
             stage: progress.stage === 'ocr' ? 'OCR on device' : 'Reading PDF',
             progress: ((index + progress.progress) / files.length) * 100,
             detail: `${file.name} · page ${progress.page || 1} of ${progress.total || 1}`
           });
         });
+        if (!isCurrentWork()) return;
         setProcessing({ stage: 'Model extraction', progress: ((index + 0.75) / files.length) * 100, detail: `${file.name} · comparing extraction paths` });
         let model = {};
         try {
@@ -188,12 +215,13 @@ function App() {
         }
         next.push({ ...parsed, model });
       }
+      if (!isCurrentWork()) return;
       setDocuments(finalizeDocuments(next));
       setNotice({ tone: 'success', text: `Analyzed ${next.length} invoice${next.length === 1 ? '' : 's'} locally. Select a pair to review the evidence.` });
     } catch (error) {
       setNotice({ tone: 'danger', text: error.message || 'The PDF could not be processed.' });
     } finally {
-      setProcessing(null);
+      if (isCurrentWork()) setProcessing(null);
       event.target.value = '';
     }
   };
@@ -207,18 +235,28 @@ function App() {
   };
 
   const askAgent = async (message, threadOverride = selectedThread, documentsOverride = documents) => {
-    if (!threadOverride) return;
+    if (!threadOverride || workspaceBusy) return;
+    const contextDocuments = agentContextDocuments(documentsOverride);
+    if (!contextDocuments.length) {
+      setNotice({ tone: 'warning', text: 'Wait until the selected invoice context finishes loading.' });
+      return;
+    }
+    if (contextDocuments.length > MAX_AGENT_DOCUMENTS) {
+      setNotice({ tone: 'warning', text: `Select at most ${MAX_AGENT_DOCUMENTS} PDFs before asking the agent to review them.` });
+      return;
+    }
+    const requestId = ++agentRequestRef.current;
     setAgentBusy(true);
     setAgentActivity(null);
     try {
       const response = await fetch('/api/agent/run', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ threadId: threadOverride.id, message, documents: agentContextDocuments(documentsOverride) })
+        body: JSON.stringify({ threadId: threadOverride.id, message, documents: contextDocuments })
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || 'Agent request failed.');
-      setAgentActivity(body);
+      if (requestId === agentRequestRef.current) setAgentActivity(body);
     } catch (error) {
       setNotice({ tone: 'danger', text: error.message || 'The agent could not complete that turn.' });
     } finally {
@@ -265,12 +303,12 @@ function App() {
 
           <div className="context-bar">
             <div className="context-copy"><span className="context-icon">⌁</span><div><span className="context-label">Case context</span><strong>{selectedThread?.senderShort || 'No sample case'}</strong></div><span className="context-count">{documents.length} PDF{documents.length === 1 ? '' : 's'} loaded</span></div>
-            <select className="case-select" aria-label="Choose sample case" value={selectedThreadId} onChange={(event) => { setSelectedThreadId(event.target.value); setDocuments([]); setAgentActivity(null); }}><option value="mail-01">AutoMotion sample</option>{inboxThreads.filter((thread) => thread.id !== 'mail-01').map((thread) => <option key={thread.id} value={thread.id}>{thread.senderShort} · {thread.tag}</option>)}</select>
+            <select className="case-select" aria-label="Choose sample case" value={selectedThreadId} disabled={agentBusy} onChange={(event) => { invalidateWork(); setSelectedThreadId(event.target.value); setDocuments([]); setAgentActivity(null); setProcessing(null); }}><option value="mail-01">AutoMotion sample</option>{inboxThreads.filter((thread) => thread.id !== 'mail-01').map((thread) => <option key={thread.id} value={thread.id}>{thread.senderShort} · {thread.tag}</option>)}</select>
             <input ref={inputRef} type="file" accept="application/pdf,.pdf" multiple hidden onChange={processFiles} />
-            <button className="context-upload" onClick={() => inputRef.current?.click()}>＋ Attach PDFs</button>
+            <button className="context-upload" disabled={workspaceBusy} onClick={() => inputRef.current?.click()}>＋ Attach PDFs</button>
           </div>
 
-          <AgentConsole thread={selectedThread} summary={summary} activeFirst={activeFirst} activeSecond={activeSecond} activeAction={activeAction} activity={agentActivity} busy={agentBusy} onPrompt={askAgent} onCopyDraft={copyDraft} onChooseAction={chooseAction} onCopyReviewNote={copyReviewNote} />
+          <AgentConsole thread={selectedThread} summary={summary} activeFirst={activeFirst} activeSecond={activeSecond} activeAction={activeAction} activity={agentActivity} busy={workspaceBusy} onPrompt={askAgent} onCopyDraft={copyDraft} onChooseAction={chooseAction} onCopyReviewNote={copyReviewNote} />
           <div className="chat-footer-note"><span>Human approval required</span><span>·</span><span>Nothing is sent automatically</span></div>
         </div>
       </main>

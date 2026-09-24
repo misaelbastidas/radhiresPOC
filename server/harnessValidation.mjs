@@ -1,3 +1,5 @@
+import { MAX_AGENT_DOCUMENTS, MAX_DOCUMENT_PAGES, MAX_DOCUMENT_TEXT } from '../src/lib/agentPolicy.js';
+
 const allowedToolNames = new Set([
   'scan_inbox',
   'extract_invoice',
@@ -23,17 +25,20 @@ export function validateAgentInput(payload) {
     return { ok: false, error: 'message must contain between 1 and 500 characters.' };
   }
   if (payload.documents !== undefined) {
-    if (!Array.isArray(payload.documents) || payload.documents.length > 4) {
-      return { ok: false, error: 'At most four documents may be included in agent context.' };
+    if (!Array.isArray(payload.documents) || payload.documents.length === 0) {
+      return { ok: false, error: 'At least one PDF document must be included when documents are provided.' };
+    }
+    if (payload.documents.length > MAX_AGENT_DOCUMENTS) {
+      return { ok: false, error: `At most ${MAX_AGENT_DOCUMENTS} documents may be included in agent context.` };
     }
     for (const document of payload.documents) {
       if (!isPlainObject(document) || typeof document.name !== 'string' || !/\.pdf$/i.test(document.name)) {
         return { ok: false, error: 'Agent documents must be PDF metadata objects.' };
       }
-      if (typeof document.text === 'string' && document.text.length > 24000) {
+      if (typeof document.text === 'string' && document.text.length > MAX_DOCUMENT_TEXT) {
         return { ok: false, error: 'Extracted document text is too large for the agent context.' };
       }
-      if (Array.isArray(document.pages) && document.pages.length > 6) {
+      if (Array.isArray(document.pages) && document.pages.length > MAX_DOCUMENT_PAGES) {
         return { ok: false, error: 'A document may contain at most six pages in agent context.' };
       }
     }
@@ -65,7 +70,7 @@ export function validateModelInput(payload) {
   const hasText = typeof payload.text === 'string' && payload.text.trim().length > 0;
   const hasPages = Array.isArray(payload.pages) && payload.pages.length > 0;
   if (!hasText && !hasPages) return { ok: false, error: 'At least one rendered page or text layer is required.' };
-  if (hasPages && payload.pages.length > 6) return { ok: false, error: 'A maximum of six PDF pages may be sent to the model.' };
-  if (hasText && payload.text.length > 24000) return { ok: false, error: 'The extracted text is too large for model extraction.' };
+  if (hasPages && payload.pages.length > MAX_DOCUMENT_PAGES) return { ok: false, error: `A maximum of ${MAX_DOCUMENT_PAGES} PDF pages may be sent to the model.` };
+  if (hasText && payload.text.length > MAX_DOCUMENT_TEXT) return { ok: false, error: 'The extracted text is too large for model extraction.' };
   return { ok: true, value: payload };
 }
