@@ -10,7 +10,7 @@ The editable draw.io diagrams are in [`LEDGERLINE_AGENT_GRAPH.drawio`](LEDGERLIN
 
 ## Run it locally
 
-Requirements: Node.js 20 or newer.
+Requirements: Docker Desktop with Docker Compose v2 for the recommended path. Node.js 20 or newer is only needed when running without Docker.
 
 ### Recommended: Docker
 
