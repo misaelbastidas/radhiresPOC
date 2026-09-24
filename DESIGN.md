@@ -1,100 +1,74 @@
-# Design notes
+# Ledgerline Invoice Review Harness — Design Document
 
-## Problem thesis
+- **The problem thesis**
 
-Accounts-payable analysts spend disproportionate time on invoice exceptions rather than clean invoices. A duplicated invoice may be an accidental resend, a legitimate recurring charge, a credit memo, or a corrected invoice with a different number. The distinction often lives across layout, dates, purchase-order references, service periods, and the surrounding document context.
+  - Accounts-payable analysts spend a large part of their day investigating invoice exceptions: opening PDFs, comparing values, checking whether a resend is legitimate, and writing back to suppliers. The cost is operational time, delayed approvals, and the risk of paying a duplicate or escalating a legitimate recurring charge as an error.
+  - This POC targets invoice classification on request. An analyst can ask whether the documents in a case look like a duplicate, a recurring charge, a corrected invoice, a credit memo, or a normal invoice. The system must explain its proposal with evidence rather than produce an unexplained score.
+  - AI fits the unstructured part of this problem. Invoices arrive in different layouts, and the meaning of a duplicate may depend on line descriptions, service periods, purchase orders, or the surrounding message. Deterministic extraction, normalization, arithmetic checks, and similarity signals provide the control layer; the LLM helps interpret the case, select approved capabilities, and communicate the result.
+  - The LLM does not approve payment or make an irreversible accounting decision.
+  - **Thesis:** an AP analyst should be able to resolve a suspicious invoice case in minutes, with a reviewable evidence trail and a human decision point, instead of manually comparing several documents and guessing what to do next.
 
-The cost is not only overpayment. Analysts also spend time opening documents, comparing values, and writing back to suppliers. A useful harness should reduce investigation time without pretending that a model can make a safe payment decision by itself.
+- **The end user & the interface**
 
-The thesis is deliberately narrow: **an AP analyst should be able to resolve one suspicious invoice pair in minutes, with an evidence trail they can defend, instead of manually comparing several documents and guessing whether a resend is legitimate**.
+  - The end user is an AP analyst working through a supplier-invoice queue. Their practical questions are:
+    - What did the agent find?
+    - Which fields and documents support that conclusion?
+    - What should I do next, and can I safely ask the supplier for clarification?
+  - The POC uses a centered, agent-first chat workspace. The analyst chooses a local sample case or attaches invoice PDFs, then explicitly asks the agent to classify invoices, compare evidence, validate totals, or draft a supplier reply.
+  - The response contains the proposed result, relevant evidence, a compact tool trace, and human decision controls. Drafted replies are never sent automatically.
+  - Chat is intentional: the analyst starts with a question or instruction, not an automatic background process. It keeps the scope of each turn visible and makes the human approval boundary clear.
+  - The interface looks familiar to an analyst, but it is narrower than a general chatbot: the agent can only work with the selected case and the capabilities exposed by the harness.
 
-AI fits the unstructured part of the problem: invoices arrive in different layouts, and the meaning of a duplicate often depends on service periods, line descriptions, and context rather than one exact key. AI is not a good fit for the final payment decision, accounting policy, or irreversible ERP action; those remain deterministic or human-controlled.
+- **Architecture & the harness**
 
-## User and interface
+  ```text
+  sample inbox / uploaded PDFs
+               |
+               v
+   deterministic OCR + optional vision extraction
+               |
+               v
+   field reconciliation + arithmetic validation
+               |
+               v
+   allowlisted tools <-> bounded agent workflow
+               |
+               v
+   evidence-backed proposal -> human review -> optional draft copy
+  ```
 
-The user is an AP analyst working through a busy AP inbox. They want to know three things quickly:
+  - The POC is packaged as a Node/React application with Docker Compose so another person can clone the repository, add or modify samples, and run the same flow locally.
+  - Deterministic extraction uses the PDF text layer, browser-compatible OCR, normalization, and invoice-math rules. An optional Anthropic Claude vision call produces a second field set for irregular layouts.
+  - The reconciler compares both field sets. Disagreement remains visible as a conflict instead of being silently overwritten.
+  - The agent exposes six narrow capabilities: scan the inbox, extract an invoice, find similar invoices, compare documents, validate invoice math, and draft a vendor message.
+  - The LLM proposes which capability to use. The executor validates the arguments and runs deterministic application code; the model cannot invent an API call, execute arbitrary code, or send an email.
+  - Context and memory are separate:
+    - **Session context:** selected thread, linked documents, extracted fields, current instruction, and current tool results. It is rebuilt and bounded for each request.
+    - **Review memory:** a small case-scoped record of prior analyst decisions and review events. Only recent, relevant events are injected into a later turn.
+    - **External knowledge:** intentionally out of scope. There is no RAG layer because the task is limited to the selected invoice case and local fixtures.
+  - The harness uses LangChain for typed model/tool interfaces and LangGraph for the bounded `agent -> tools -> agent -> final` workflow. The provider model is configurable and defaults to Claude Sonnet 4.6 in the local demo.
+  - Failure and quality controls are part of the harness:
+    - Input guardrails reject unsupported files, malformed tool requests, oversized context, and instructions outside invoice review.
+    - Tool guardrails enforce an allowlist, typed arguments, bounded document access, and no payment, ERP, or outbound-email side effects.
+    - Output guardrails require structured results, displayed evidence, uncertainty when fields are missing or conflicting, and a human-review state for consequential decisions.
+    - A missing model key, provider failure, OCR weakness, or trace outage leaves the deterministic path available and reports the limitation.
+    - A maximum tool-iteration budget prevents loops. Missing fields remain missing; the system does not fill them by inference.
+    - The included corpus evaluation covers ten synthetic automotive-parts cases, including exact resubmissions, recurring purchases, corrected invoices, credit memos, missing fields, and low-quality scans.
 
-1. Why did this case get flagged?
-2. What evidence agrees or disagrees?
-3. What is the safest next step?
+- **Tooling & tradeoffs**
 
-The interface is a simulated inbox plus an evidence-first agent workspace. The analyst selects a message on the left, and the agent explains what it found on the right before opening the document comparison. It uses plain labels, side-by-side invoice metadata, a field-level extraction audit, and explicit actions. The result is useful even when the live model is unavailable.
+  - The main tradeoff is control versus convenience. A deterministic-only system would be easier to reason about but less useful for varied layouts and natural-language requests. A model-only system would be flexible but too difficult to audit safely.
+  - This design keeps deterministic code responsible for extraction checks, arithmetic, normalization, scoring, and side effects, while the model handles bounded orchestration and explanation.
+  - The browser-compatible OCR path avoids requiring Poppler or a system Tesseract installation, improving portability. The tradeoff is a larger client bundle and slower first extraction.
+  - The optional vision path can improve irregular documents, but it adds latency, cost, and another failure mode, so it is never the sole source of truth.
+  - The chat interface was chosen over a full inbox dashboard because the POC demonstrates agent behavior and human control, not queue management. The selected-case control still provides reproducible fixtures.
+  - Real email, ERP, payment, persistence, permissions, and production outbound messaging are intentionally excluded; adding them would expand the risk surface before the core harness is proven.
+  - Docker Compose makes the runtime reproducible across machines, while `.env` keeps provider credentials outside the repository. The app remains usable offline and with the deterministic fallback.
 
-The chat is intentionally scoped to the selected thread. It is not a general-purpose chatbot: the agent can use invoice-review capabilities, but every recommendation must connect back to the current email, attachment, or reference document.
+- **Reflections**
 
-## Harness architecture
-
-```text
-PDF/text files
-      |
-      +--> pdf.js text layer --------------------+
-      |                                           |
-      +--> rendered page --> Tesseract WASM -----+--> deterministic fields
-      |                                           |
-      +--> rendered page --> optional vision ---- +--> model fields
-                                                  |
-                              field reconciler <--+
-                                      |
-                              duplicate scorer
-                                      |
-                          evidence + next action
-```
-
-The future email connector is represented by `samples/inbox/`. In production, the connector would provide message text, attachments, sender, and thread metadata. In the POC, those inputs are local fixtures so anybody can clone the repo and reproduce the same agent behavior.
-
-The agent's capabilities are intentionally narrow: scan the inbox, extract an invoice, find similar invoices, compare evidence, validate totals, and prepare a draft next step. Context is assembled per thread rather than sending the whole inbox to the model. Session state contains the selected thread and recent review; a durable implementation would persist case decisions and supplier policy separately.
-
-The back end now exposes those capabilities as explicit local APIs. A chat turn is not a direct free-form model call: it enters an agent controller, which selects an allowlisted tool sequence, returns a structured assistant message, and records a bounded case-scoped memory entry. This makes the harness inspectable in a demo and gives a future model a safe boundary to operate inside.
-
-The initial loop is intentionally deterministic. It is a vertical slice of the control plane, not a claim that the agent already plans arbitrary work. The vision model remains an optional extraction tool. The next model-backed step would be to let a model select among the same tools while keeping the controller responsible for schemas, evidence, and confirmation boundaries.
-
-The deterministic path is the control. It uses local extraction, rules, normalization, and arithmetic validation. The model path is parallel rather than hidden behind the OCR path so reviewers can see disagreement. A field is not treated as “more true” just because the model returned it; conflicts remain visible.
-
-The duplicate scorer is intentionally explainable. The strongest signals are same vendor, same invoice number, same total, same PO, and overlapping service period. A different service period suppresses duplicate confidence and supports the recurring-charge explanation.
-
-## Failure handling and guardrails
-
-- Missing fields are shown as missing, not filled by inference.
-- OCR/model disagreement becomes a conflict that needs review.
-- A low-quality scan reports that OCR confidence may be incomplete.
-- No payment or ERP action is executed.
-- A missing API key leaves the deterministic path available and labels the demo adapter.
-- Uploaded PDF content is processed in the browser before an optional model request.
-- The app uses synthetic fixtures by default and does not persist documents.
-- The chat cannot execute payment, ERP, or outbound-email actions; those remain human-confirmed or out of scope.
-
-## Evaluation
-
-The included fixtures cover:
-
-- Exact resubmission: same vendor, invoice number, total, PO, and service period.
-- Legitimate recurring invoice: same vendor and amount, different period and invoice number.
-- Editable text input for quickly changing one signal and seeing the score move.
-
-With more time, the next evaluation set would include scanned invoices, credit memos, currency formats, corrected invoice numbers, and intentionally conflicting OCR/model outputs. Metrics would be field extraction accuracy, duplicate false-positive rate, and the percentage of cases where an analyst can explain the suggested action from displayed evidence.
-
-For this vertical slice, the quality bar is intentionally observable rather than implied:
-
-- The deterministic path is covered by automated tests for extraction, amount parsing, duplicate scoring, recurrence, and conflict handling.
-- The demo contains both a likely resubmission and a legitimate recurring invoice so the harness has to distinguish them.
-- Every suggested classification exposes the signals that contributed to it.
-- Model disagreement is a visible state, not silently overwritten.
-- A reviewer can change one value in `samples/`, re-run the flow, and see the result move.
-
-The next useful evaluation step would be an annotated set of 20-30 synthetic invoices with expected fields and expected duplicate decisions. That would let us measure whether the model adds signal over the deterministic baseline instead of assuming that it does.
-
-## Tradeoffs
-
-The browser-based OCR path avoids system-level Tesseract and Poppler dependencies, which makes cloning the repository simpler. The tradeoff is a larger first-load and the need to download WASM/language assets in the browser. The model adapter is server-side so API keys are not exposed, but it is optional and requires network access.
-
-The repository also ships a multi-stage Docker image and Compose file. Docker packages the compiled UI and local agent API together so a reviewer can run the POC without matching the author's Node version. The tradeoff is the usual requirement that Docker Desktop or a compatible Docker runtime is installed.
-
-The POC intentionally stops at a single analyst workspace. An ERP connector, persistence, permissions, audit logs, and outbound communications would be the next product layer, not prerequisites for demonstrating the harness.
-
-## Reflections
-
-Time spent: approximately one focused half-day on problem framing, implementation, documentation, and verification. The scope was kept intentionally small so the workflow could run end to end from a fresh clone.
-
-The least certain assumption is that the duplicate decision can be made from invoice documents alone. In a real AP environment, the payment ledger, goods-received record, credit memo history, and supplier-specific policy may be necessary. The harness therefore treats its result as a review queue signal, not an accounting truth.
-
-With more time, I would add real PDF fixtures from several layouts, a small labeled evaluation set, a review feedback loop, and an ERP export connector. I would also test whether the model path materially improves recall on scanned or irregular invoices before making it a default rather than an escalation path.
+  - This vertical slice took approximately one focused half-day across problem framing, implementation, documentation, and verification. The scope was kept small enough to run end to end from a fresh clone while still exposing the important harness boundaries.
+  - The least certain assumption is that invoice documents and message context are enough to classify a duplicate. In a real AP operation, the payment ledger, purchase order, goods-received record, credit-memo history, and supplier policy may change the answer.
+  - The agent should therefore be treated as review support, not accounting truth.
+  - Next steps would be to add more layouts and languages, create an annotated evaluation set with field-level and classification metrics, measure whether the model improves recall over the deterministic baseline, and persist analyst decisions for feedback.
+  - Only after those tests would I add a real email connector and a separately approved outbound-message tool with authorization, audit logs, and an explicit confirmation step.

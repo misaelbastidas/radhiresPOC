@@ -1,0 +1,13 @@
+Vendor: Scanline Auto Supply
+Tax ID: MX-SAS-884002
+Invoice number: SA-9008
+Invoice date: 2026-03-14
+Purchase order: PO-9477
+Currency: USD
+Service period: Mar 2026
+Line item: FL-88 oil filter | Quantity: 30 | Unit price: 12.00 | Line amount: 360.00
+Subtotal: 360.00
+Tax: 57.60
+Total due: 417.60
+Payment terms: Net 30
+Source note: Simulated low-quality scan; tax and total came from a separate page and need human verification.

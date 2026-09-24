@@ -1,0 +1,4 @@
+From: billing@torqueline.example
+Subject: Corrected invoice TL-8812
+
+Please ignore TL-8811. The corrected rotor invoice is attached because the quantity on the first version was wrong.

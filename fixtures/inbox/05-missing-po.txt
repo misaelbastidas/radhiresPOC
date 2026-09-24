@@ -1,0 +1,4 @@
+From: billing@rutanorte.example
+Subject: March freight invoice RN-3901
+
+Invoice RN-3901 for the Monterrey to Cancun lane is attached. We could not find the purchase order number in the shipping paperwork.

@@ -1,4 +1,0 @@
-From: billing@atlas.example
-Subject: Invoice AC-5520 - revised amount
-
-Updated total reflects the approved quantity change. Please compare this attachment with the original before processing.

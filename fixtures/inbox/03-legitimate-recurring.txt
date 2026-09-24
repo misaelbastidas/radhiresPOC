@@ -1,0 +1,4 @@
+From: billing@automotion.example
+Subject: Invoice AM-2026-1043 - February parts
+
+February brake-pad replenishment invoice attached for PO-8841. This is a new service period and not a correction to January.

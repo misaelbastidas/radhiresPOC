@@ -1,0 +1,14 @@
+Vendor: GaragePro Wholesale
+Tax ID: MX-GPW-774210
+Credit memo number: CM-204
+Invoice reference: GP-7710
+Credit memo date: 2026-03-10
+Purchase order: PO-9144
+Currency: USD
+Service period: Mar 2026
+Line item: ALT-55 returned alternator | Quantity: 2 | Unit price: 140.00 | Line amount: -280.00
+Subtotal: -280.00
+Tax: -44.80
+Total due: -324.80
+Payment terms: Net 30
+Document type: Credit memo for returned goods; do not treat as a payable invoice.

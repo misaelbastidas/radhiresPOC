@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { buildDuplicatePairs, getDemoDocuments, parseInvoiceFields, reconcileExtractions, scoreDuplicate, valueOf } from '../src/lib/invoiceEngine.js';
 
 test('parses the editable invoice fixture shape', () => {
-  const fields = parseInvoiceFields(`Vendor: Northstar Office Supply\nInvoice number: NS-1042\nInvoice date: 2026-02-12\nPurchase order: PO-8841\nService period: Jan 2026\nSubtotal: 1,260.00\nTax: 240.00\nTotal due: 1,500.00`);
-  assert.equal(valueOf(fields, 'vendorName'), 'Northstar Office Supply');
-  assert.equal(valueOf(fields, 'invoiceNumber'), 'NS-1042');
+  const fields = parseInvoiceFields(`Vendor: AutoMotion Parts\nInvoice number: AM-2026-1042\nInvoice date: 2026-02-12\nPurchase order: PO-8841\nService period: Jan 2026\nSubtotal: 1,260.00\nTax: 240.00\nTotal due: 1,500.00`);
+  assert.equal(valueOf(fields, 'vendorName'), 'AutoMotion Parts');
+  assert.equal(valueOf(fields, 'invoiceNumber'), 'AM-2026-1042');
   assert.equal(valueOf(fields, 'purchaseOrder'), 'PO-8841');
   assert.equal(valueOf(fields, 'total'), 1500);
   assert.equal(fields.warnings.length, 0);
@@ -35,9 +35,22 @@ test('reconciliation exposes conflicts instead of silently selecting a value', (
   assert.ok(result.warnings.length >= 2);
 });
 
+test('does not mistake a missing purchase order warning for a purchase order value', () => {
+  const fields = parseInvoiceFields('Vendor: Ruta Norte Logistics\nWarning: Purchase order was not included in the supplier document.');
+  assert.equal(valueOf(fields, 'purchaseOrder'), null);
+});
+
+test('keeps credit memos outside payable duplicate classification', () => {
+  const invoice = parseInvoiceFields('Vendor: GaragePro\nInvoice number: GP-7710\nTotal due: 1299.20');
+  const creditMemo = parseInvoiceFields('Vendor: GaragePro\nCredit memo number: CM-204\nTotal due: -324.80\nDocument type: Credit memo');
+  const result = scoreDuplicate(invoice, creditMemo);
+  assert.equal(result.classification, 'not-duplicate');
+  assert.equal(result.creditMemo, true);
+});
+
 test('builds pair queue ordered by risk', () => {
   const pairs = buildDuplicatePairs(getDemoDocuments());
-  assert.equal(pairs.length, 3);
+  assert.equal(pairs.length, 10);
   assert.equal(pairs[0].classification, 'likely-duplicate');
   assert.ok(pairs[0].score > pairs[1].score);
 });

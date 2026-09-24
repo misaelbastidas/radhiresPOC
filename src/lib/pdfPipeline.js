@@ -5,11 +5,16 @@ import { normalizeText, parseInvoiceFields } from './invoiceEngine';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
+const MAX_FILE_BYTES = 12 * 1024 * 1024;
+const MAX_PAGES = 6;
+
 function canvasToDataUrl(canvas) {
   return canvas.toDataURL('image/jpeg', 0.78);
 }
 
 export async function extractPdfDocument(file, onProgress = () => {}) {
+  if (!file || typeof file.name !== 'string') throw new Error('A named invoice file is required.');
+  if (file.size > MAX_FILE_BYTES) throw new Error('Invoice files must be smaller than 12 MB.');
   const extension = file.name.toLowerCase().split('.').pop();
   if (extension === 'txt' || extension === 'md') {
     const text = await file.text();
@@ -30,7 +35,8 @@ export async function extractPdfDocument(file, onProgress = () => {}) {
   const loadingTask = pdfjsLib.getDocument({ data: bytes });
   const pdf = await loadingTask.promise;
   const pages = [];
-  const maxPages = Math.min(pdf.numPages, 6);
+  if (pdf.numPages > MAX_PAGES) throw new Error('Invoice PDFs may contain at most six pages.');
+  const maxPages = pdf.numPages;
   let usedOcr = false;
 
   for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {

@@ -1,0 +1,12 @@
+Vendor: GaragePro Wholesale
+Tax ID: MX-GPW-774210
+Invoice number: GP-7710
+Invoice date: 2026-03-07
+Purchase order: PO-9144
+Currency: USD
+Service period: Mar 2026
+Line item: ALT-55 remanufactured alternator | Quantity: 8 | Unit price: 140.00 | Line amount: 1,120.00
+Subtotal: 1,120.00
+Tax: 179.20
+Total due: 1,299.20
+Payment terms: Net 30

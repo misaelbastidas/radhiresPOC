@@ -1,0 +1,4 @@
+From: billing@garagepro.example
+Subject: Credit memo CM-204 applied to GP-7710
+
+Credit memo attached for returned alternator units. The credit is related to the original invoice, but it is not a second invoice.

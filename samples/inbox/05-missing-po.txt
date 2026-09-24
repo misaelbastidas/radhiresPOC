@@ -1,4 +1,0 @@
-From: billing@brightline.example
-Subject: March freight invoice
-
-Invoice BL-3901 for lane MX-CUN attached. We could not find the purchase order number in the shipping paperwork.

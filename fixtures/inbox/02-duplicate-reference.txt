@@ -1,0 +1,4 @@
+From: billing@automotion.example
+Subject: Invoice AM-2026-1042 attached
+
+Please find attached our January brake-parts invoice. Net 30 terms. This message was sent before the later resend.

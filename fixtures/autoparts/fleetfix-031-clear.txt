@@ -1,0 +1,12 @@
+Vendor: FleetFix Supply
+Tax ID: MX-FFS-228104
+Invoice number: FF-2026-031
+Invoice date: 2026-03-11
+Purchase order: PO-9250
+Currency: USD
+Service period: Mar 2026
+Line item: WW-18 all-weather wiper blade | Quantity: 40 | Unit price: 18.00 | Line amount: 720.00
+Subtotal: 720.00
+Tax: 115.20
+Total due: 835.20
+Payment terms: Net 30

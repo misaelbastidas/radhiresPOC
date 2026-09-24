@@ -1,0 +1,4 @@
+From: billing@borealfleet.example
+Subject: Monthly maintenance invoice - April
+
+Routine fleet maintenance services for April. This is part of the monthly service agreement.

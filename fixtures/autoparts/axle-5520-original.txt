@@ -1,0 +1,12 @@
+Vendor: AxleWorks Components
+Tax ID: MX-AWC-630777
+Invoice number: AW-5520
+Invoice date: 2026-03-12
+Purchase order: PO-9310
+Currency: USD
+Service period: Mar 2026
+Line item: WH-200 wheel hub assembly | Quantity: 10 | Unit price: 210.00 | Line amount: 2,100.00
+Subtotal: 2,100.00
+Tax: 336.00
+Total due: 2,436.00
+Payment terms: Net 45

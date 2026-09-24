@@ -19,7 +19,9 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/server.mjs ./server.mjs
 COPY --from=build /app/server ./server
 COPY --from=build /app/src/lib ./src/lib
-COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/samples ./samples
+COPY --from=build /app/package*.json ./
+RUN npm ci --omit=dev
 
 EXPOSE 8787
 

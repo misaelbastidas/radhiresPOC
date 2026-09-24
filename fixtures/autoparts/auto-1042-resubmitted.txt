@@ -1,0 +1,13 @@
+Vendor: AutoMotion Parts
+Tax ID: MX-AMP-840194
+Invoice number: AM-2026-1042
+Invoice date: 2026-02-14
+Purchase order: PO-8841
+Currency: USD
+Service period: Jan 2026
+Line item: BP-442 ceramic brake pad set | Quantity: 12 | Unit price: 105.00 | Line amount: 1,260.00
+Subtotal: 1,260.00
+Tax: 240.00
+Total due: 1,500.00
+Payment terms: Net 30
+Email note: Resending the invoice because the first message may not have arrived.

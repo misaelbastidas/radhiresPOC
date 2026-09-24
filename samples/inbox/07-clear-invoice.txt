@@ -1,4 +1,0 @@
-From: events@cedar.example
-Subject: Invoice 2026-031 - event services
-
-Final invoice attached. Service date is March 14. No prior invoice is referenced in this message.

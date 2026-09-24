@@ -1,4 +1,0 @@
-From: billing@northstar.example
-Subject: Invoice NS-1043 - February supplies
-
-February replenishment invoice attached for PO-8841. This is a new service period and not a correction to January.

@@ -1,0 +1,4 @@
+From: billing@axleworks.example
+Subject: Invoice AW-5520 - revised quantity
+
+Updated total reflects the approved hub quantity change. Please compare this attachment with the original before processing.

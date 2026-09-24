@@ -1,0 +1,12 @@
+Vendor: TorqueLine Components
+Tax ID: MX-TLC-390118
+Invoice number: TL-8811
+Invoice date: 2026-03-04
+Purchase order: PO-9020
+Currency: USD
+Service period: Mar 2026
+Line item: RT-90 ventilated rotor | Quantity: 20 | Unit price: 82.50 | Line amount: 1,650.00
+Subtotal: 1,650.00
+Tax: 264.00
+Total due: 1,914.00
+Payment terms: Net 45

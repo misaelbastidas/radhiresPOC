@@ -1,12 +1,12 @@
 [
-  {"id":"mail-01","fixture":"exact-duplicate","sender":"Northstar Office Supply","subject":"Fwd: Invoice NS-1042 - January supplies","attachments":["../invoice-1042-resubmitted.txt"],"expected":"likely-duplicate"},
-  {"id":"mail-02","fixture":"duplicate-reference","sender":"Northstar Office Supply","subject":"Invoice NS-1042 attached","attachments":["../invoice-1042-original.txt"],"expected":"reference"},
-  {"id":"mail-03","fixture":"legitimate-recurring","sender":"Northstar Office Supply","subject":"Invoice NS-1043 - February supplies","attachments":["../invoice-1043-recurring.txt"],"expected":"legitimate-recurring"},
-  {"id":"mail-04","fixture":"corrected-invoice","sender":"Acme Industrial Parts","subject":"Corrected invoice INV-8812","attachments":[],"expected":"needs-review"},
-  {"id":"mail-05","fixture":"missing-po","sender":"Brightline Logistics","subject":"March freight invoice","attachments":[],"expected":"missing-evidence"},
-  {"id":"mail-06","fixture":"credit-memo","sender":"Medico Office Services","subject":"Credit memo CM-204 applied to INV-7710","attachments":[],"expected":"not-duplicate"},
-  {"id":"mail-07","fixture":"clear-invoice","sender":"Cedar & Co. Catering","subject":"Invoice 2026-031 - event services","attachments":[],"expected":"low-risk"},
-  {"id":"mail-08","fixture":"amount-changed","sender":"Atlas Components","subject":"Invoice AC-5520 - revised amount","attachments":[],"expected":"needs-review"},
-  {"id":"mail-09","fixture":"monthly-recurring","sender":"Evergreen Facilities","subject":"Monthly maintenance invoice - April","attachments":[],"expected":"legitimate-recurring"},
-  {"id":"mail-10","fixture":"noisy-scan","sender":"Papertrail Print Co.","subject":"Invoice attached - scan may be incomplete","attachments":[],"expected":"low-confidence"}
+  {"id":"mail-01","fixture":"exact-duplicate","sender":"AutoMotion Parts","subject":"Fwd: Invoice AM-2026-1042 - brake pads","attachments":["../autoparts/pdf/auto-1042-resubmitted.pdf"],"referenceAttachments":["../autoparts/pdf/auto-1042-original.pdf"],"expected":"likely-duplicate"},
+  {"id":"mail-02","fixture":"duplicate-reference","sender":"AutoMotion Parts","subject":"Invoice AM-2026-1042 attached","attachments":["../autoparts/pdf/auto-1042-original.pdf"],"expected":"reference"},
+  {"id":"mail-03","fixture":"legitimate-recurring","sender":"AutoMotion Parts","subject":"Invoice AM-2026-1043 - February parts","attachments":["../autoparts/pdf/auto-1043-recurring.pdf"],"referenceAttachments":["../autoparts/pdf/auto-1042-original.pdf"],"expected":"legitimate-recurring"},
+  {"id":"mail-04","fixture":"corrected-invoice","sender":"TorqueLine Components","subject":"Corrected invoice TL-8812","attachments":["../autoparts/pdf/torque-8812-corrected.pdf"],"referenceAttachments":["../autoparts/pdf/torque-8811-original.pdf"],"expected":"needs-review"},
+  {"id":"mail-05","fixture":"missing-po","sender":"Ruta Norte Logistics","subject":"March freight invoice RN-3901","attachments":["../autoparts/pdf/ruta-3901-missing-po.pdf"],"expected":"missing-evidence"},
+  {"id":"mail-06","fixture":"credit-memo","sender":"GaragePro Wholesale","subject":"Credit memo CM-204 applied to GP-7710","attachments":["../autoparts/pdf/garage-204-credit-memo.pdf"],"referenceAttachments":["../autoparts/pdf/garage-7710-invoice.pdf"],"expected":"not-duplicate"},
+  {"id":"mail-07","fixture":"clear-invoice","sender":"FleetFix Supply","subject":"Invoice FF-2026-031 - wiper blades","attachments":["../autoparts/pdf/fleetfix-031-clear.pdf"],"expected":"low-risk"},
+  {"id":"mail-08","fixture":"amount-changed","sender":"AxleWorks Components","subject":"Invoice AW-5520 - revised quantity","attachments":["../autoparts/pdf/axle-5520-revised.pdf"],"referenceAttachments":["../autoparts/pdf/axle-5520-original.pdf"],"expected":"needs-review"},
+  {"id":"mail-09","fixture":"monthly-recurring","sender":"Boreal Fleet Maintenance","subject":"Monthly maintenance invoice - April","attachments":["../autoparts/pdf/boreal-032-april.pdf"],"referenceAttachments":["../autoparts/pdf/boreal-031-march.pdf"],"expected":"legitimate-recurring"},
+  {"id":"mail-10","fixture":"noisy-scan","sender":"Scanline Auto Supply","subject":"Invoice attached - scan may be incomplete","attachments":["../autoparts/pdf/scanline-9008-low-confidence-scanned.pdf"],"expected":"low-confidence"}
 ]

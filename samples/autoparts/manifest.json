@@ -1,0 +1,86 @@
+{
+  "domain": "automotive-parts-ap",
+  "currency": "USD",
+  "cases": [
+    {
+      "id": "case-exact-duplicate",
+      "email": "../../fixtures/inbox/01-exact-duplicate.txt",
+      "sourceDocuments": ["auto-1042-original.txt", "auto-1042-resubmitted.txt"],
+      "pdfDocuments": ["pdf/auto-1042-original.pdf", "pdf/auto-1042-resubmitted.pdf"],
+      "expected": "likely-duplicate",
+      "reason": "Same vendor, invoice number, PO, service period, and total."
+    },
+    {
+      "id": "case-duplicate-reference",
+      "email": "../../fixtures/inbox/02-duplicate-reference.txt",
+      "sourceDocuments": ["auto-1042-original.txt"],
+      "pdfDocuments": ["pdf/auto-1042-original.pdf"],
+      "expected": "reference",
+      "reason": "The message is the original reference for the resubmission case."
+    },
+    {
+      "id": "case-legitimate-recurring-parts",
+      "email": "../../fixtures/inbox/03-legitimate-recurring.txt",
+      "sourceDocuments": ["auto-1042-original.txt", "auto-1043-recurring.txt"],
+      "pdfDocuments": ["pdf/auto-1042-original.pdf", "pdf/auto-1043-recurring.pdf"],
+      "expected": "legitimate-recurring",
+      "reason": "Same supplier, PO, and amount, but a different invoice and service period."
+    },
+    {
+      "id": "case-corrected-invoice",
+      "email": "../../fixtures/inbox/04-corrected-invoice.txt",
+      "sourceDocuments": ["torque-8811-original.txt", "torque-8812-corrected.txt"],
+      "pdfDocuments": ["pdf/torque-8811-original.pdf", "pdf/torque-8812-corrected.pdf"],
+      "expected": "needs-review",
+      "reason": "The supplier says one invoice supersedes the other and the total changed."
+    },
+    {
+      "id": "case-missing-po",
+      "email": "../../fixtures/inbox/05-missing-po.txt",
+      "sourceDocuments": ["ruta-3901-missing-po.txt"],
+      "pdfDocuments": ["pdf/ruta-3901-missing-po.pdf"],
+      "expected": "missing-evidence",
+      "reason": "The invoice has a total but no purchase order field."
+    },
+    {
+      "id": "case-credit-memo",
+      "email": "../../fixtures/inbox/06-credit-memo.txt",
+      "sourceDocuments": ["garage-7710-invoice.txt", "garage-204-credit-memo.txt"],
+      "pdfDocuments": ["pdf/garage-7710-invoice.pdf", "pdf/garage-204-credit-memo.pdf"],
+      "expected": "not-duplicate",
+      "reason": "The second document is a credit memo for returned goods, not a payable invoice."
+    },
+    {
+      "id": "case-clear-invoice",
+      "email": "../../fixtures/inbox/07-clear-invoice.txt",
+      "sourceDocuments": ["fleetfix-031-clear.txt"],
+      "pdfDocuments": ["pdf/fleetfix-031-clear.pdf"],
+      "expected": "low-risk",
+      "reason": "The invoice is complete and has no linked duplicate in the local reference set."
+    },
+    {
+      "id": "case-amount-changed",
+      "email": "../../fixtures/inbox/08-amount-changed.txt",
+      "sourceDocuments": ["axle-5520-original.txt", "axle-5520-revised.txt"],
+      "pdfDocuments": ["pdf/axle-5520-original.pdf", "pdf/axle-5520-revised.pdf"],
+      "expected": "needs-review",
+      "reason": "The PO is shared but the approved quantity change produced a different total."
+    },
+    {
+      "id": "case-monthly-recurring",
+      "email": "../../fixtures/inbox/09-monthly-recurring.txt",
+      "sourceDocuments": ["boreal-031-march.txt", "boreal-032-april.txt"],
+      "pdfDocuments": ["pdf/boreal-031-march.pdf", "pdf/boreal-032-april.pdf"],
+      "expected": "legitimate-recurring",
+      "reason": "The same monthly service repeats for a new service period."
+    },
+    {
+      "id": "case-low-confidence",
+      "email": "../../fixtures/inbox/10-noisy-scan.txt",
+      "sourceDocuments": ["scanline-9008-low-confidence.txt"],
+      "pdfDocuments": ["pdf/scanline-9008-low-confidence-rebuilt.pdf"],
+      "expected": "low-confidence",
+      "reason": "The source is modeled as a low-quality scan and requires human verification."
+    }
+  ]
+}

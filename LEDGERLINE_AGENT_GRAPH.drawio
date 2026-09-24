@@ -1,0 +1,107 @@
+<mxfile host="app.diagrams.net" modified="2026-09-23T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="langgraph-agent" name="LangGraph agent">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Ledgerline · LangGraph agent loop" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=22;fontStyle=1;fontColor=#16324a;" vertex="1" parent="1">
+          <mxGeometry x="60" y="30" width="600" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="The LLM proposes tools; deterministic executors and human review control the outcome." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontColor=#5b7184;" vertex="1" parent="1">
+          <mxGeometry x="62" y="70" width="760" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="analyst" value="Analyst instruction&lt;br&gt;&lt;font style='font-size:11px'&gt;Classify these invoices&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#e8f5f2;strokeColor=#4db9a7;fontColor=#153f3a;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="190" width="190" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="api" value="POST /api/agent/run&lt;br&gt;&lt;font style='font-size:11px'&gt;threadId · message · documents&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#eef3f7;strokeColor=#8da6b8;fontColor=#20384b;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="190" width="210" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="input" value="Input guardrails&lt;br&gt;&lt;font style='font-size:11px'&gt;PDF · size · pages · bounded context&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#fff5df;strokeColor=#d8a849;fontColor=#624a1e;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="190" width="220" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="entry" value="runAgentTurnWithModel" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#eef3f7;strokeColor=#8da6b8;fontColor=#20384b;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="830" y="190" width="220" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="key" value="ANTHROPIC_API_KEY?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f2edf9;strokeColor=#9b80c7;fontColor=#47315f;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="180" width="170" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="fallback" value="runDeterministicFallbackTurn&lt;br&gt;&lt;font style='font-size:11px'&gt;Offline harness · no LLM&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#f4f4f4;strokeColor=#9ca5ad;fontColor=#39444c;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="350" width="230" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="START" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dcecff;strokeColor=#5c94c8;fontColor=#234b70;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="190" width="90" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="agent" value="agent&lt;br&gt;&lt;font style='font-size:11px'&gt;ChatAnthropic · system prompt&lt;br&gt;bindTools(tools) · state.messages&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#dcecff;strokeColor=#5c94c8;fontColor=#234b70;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="370" width="240" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="route" value="tool_calls&lt;br&gt;tool calls and iteration &amp;lt; 4?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f2edf9;strokeColor=#9b80c7;fontColor=#47315f;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1330" y="520" width="180" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="tools" value="tools&lt;br&gt;&lt;font style='font-size:11px'&gt;LangChain typed tools&lt;br&gt;allowlist + deterministic executors&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#e8f5f2;strokeColor=#4db9a7;fontColor=#153f3a;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="680" width="250" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="finalize" value="finalize&lt;br&gt;&lt;font style='font-size:11px'&gt;parse structured JSON&lt;br&gt;safe fallback if invalid&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#eef3f7;strokeColor=#8da6b8;fontColor=#20384b;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1360" y="680" width="210" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="output" value="Output guardrails&lt;br&gt;&lt;font style='font-size:11px'&gt;enum · evidence · deterministic classification&lt;br&gt;no payment / ERP / outbound email&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#fff5df;strokeColor=#d8a849;fontColor=#624a1e;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="830" width="270" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="human" value="Human review&lt;br&gt;&lt;font style='font-size:11px'&gt;confirm · correct · ask vendor&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#e8f5f2;strokeColor=#4db9a7;fontColor=#153f3a;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="830" width="250" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="END" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dcecff;strokeColor=#5c94c8;fontColor=#234b70;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="820" y="835" width="90" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6d8496;endArrow=block;" edge="1" parent="1" source="analyst" target="api"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6d8496;endArrow=block;" edge="1" parent="1" source="api" target="input"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6d8496;endArrow=block;" edge="1" parent="1" source="input" target="entry"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6d8496;endArrow=block;" edge="1" parent="1" source="entry" target="key"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e5" value="yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4d8d80;fontColor=#28665a;endArrow=block;" edge="1" parent="1" source="key" target="start"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e6" value="no" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8e969d;fontColor=#59636a;endArrow=block;" edge="1" parent="1" source="key" target="fallback"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6d8496;endArrow=block;" edge="1" parent="1" source="start" target="agent"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6d8496;endArrow=block;" edge="1" parent="1" source="agent" target="route"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e9" value="yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4d8d80;fontColor=#28665a;endArrow=block;" edge="1" parent="1" source="route" target="tools"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e10" value="no" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6d8496;fontColor=#516676;endArrow=block;" edge="1" parent="1" source="route" target="finalize"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e11" value="tool results" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4d8d80;fontColor=#28665a;endArrow=block;" edge="1" parent="1" source="tools" target="agent"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6d8496;endArrow=block;" edge="1" parent="1" source="finalize" target="output"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6d8496;endArrow=block;" edge="1" parent="1" source="output" target="human"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6d8496;endArrow=block;" edge="1" parent="1" source="human" target="end"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e15" value="safe response" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8e969d;fontColor=#59636a;dashed=1;endArrow=block;" edge="1" parent="1" source="fallback" target="human"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="note" value="The graph is bounded: maximum 4 model iterations before finalize." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fffdf2;strokeColor=#d8a849;fontColor=#624a1e;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="520" y="690" width="280" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="context-memory" name="Context and memory boundaries">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t2" value="Ledgerline · session context vs review memory" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=22;fontStyle=1;fontColor=#16324a;" vertex="1" parent="1"><mxGeometry x="60" y="30" width="800" height="40" as="geometry" /></mxCell>
+        <mxCell id="s1" value="Current request&lt;br&gt;&lt;font style='font-size:11px'&gt;threadId · analyst message · selected PDFs&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#eef3f7;strokeColor=#8da6b8;fontColor=#20384b;fontSize=14;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="80" y="180" width="245" height="85" as="geometry" /></mxCell>
+        <mxCell id="s2" value="Session context builder&lt;br&gt;&lt;font style='font-size:11px'&gt;OCR · vision · reconciliation · policy&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#e8f5f2;strokeColor=#4db9a7;fontColor=#153f3a;fontSize=14;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="390" y="180" width="260" height="85" as="geometry" /></mxCell>
+        <mxCell id="s3" value="sessionContext&lt;br&gt;&lt;font style='font-size:11px'&gt;rebuilt on every request&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#dcecff;strokeColor=#5c94c8;fontColor=#234b70;fontSize=15;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="720" y="180" width="230" height="85" as="geometry" /></mxCell>
+        <mxCell id="g" value="LangGraph AgentState&lt;br&gt;&lt;font style='font-size:11px'&gt;messages · sessionContext · toolCalls&lt;br&gt;iteration · draft · finalResponse&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#dcecff;strokeColor=#5c94c8;fontColor=#234b70;fontSize=14;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1030" y="180" width="300" height="95" as="geometry" /></mxCell>
+        <mxCell id="m1" value="reviewMemory&lt;br&gt;&lt;font style='font-size:11px'&gt;prior turns + human decisions&lt;br&gt;last 8 events per thread&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#fff5df;strokeColor=#d8a849;fontColor=#624a1e;fontSize=14;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="80" y="480" width="245" height="90" as="geometry" /></mxCell>
+        <mxCell id="m2" value="recentCaseMemory&lt;br&gt;&lt;font style='font-size:11px'&gt;last 6 events projected into next prompt&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#fff5df;strokeColor=#d8a849;fontColor=#624a1e;fontSize=14;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="390" y="480" width="260" height="90" as="geometry" /></mxCell>
+        <mxCell id="m3" value="MemorySaver&lt;br&gt;&lt;font style='font-size:11px'&gt;LangGraph checkpoint&lt;br&gt;key: thread_id&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#f2edf9;strokeColor=#9b80c7;fontColor=#47315f;fontSize=14;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="720" y="480" width="230" height="90" as="geometry" /></mxCell>
+        <mxCell id="m4" value="Human decision&lt;br&gt;&lt;font style='font-size:11px'&gt;recordReviewTurn / saveReviewDecision&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#e8f5f2;strokeColor=#4db9a7;fontColor=#153f3a;fontSize=14;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1030" y="480" width="300" height="90" as="geometry" /></mxCell>
+        <mxCell id="rule" value="Boundary rule&lt;br&gt;&lt;font style='font-size:11px'&gt;Current PDFs are session context.&lt;br&gt;Prior decisions are memory.&lt;br&gt;No cross-thread sharing.&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fffdf2;strokeColor=#d8a849;fontColor=#624a1e;fontSize=13;" vertex="1" parent="1"><mxGeometry x="520" y="700" width="330" height="120" as="geometry" /></mxCell>
+
+        <mxCell id="c1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6d8496;endArrow=block;" edge="1" parent="1" source="s1" target="s2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6d8496;endArrow=block;" edge="1" parent="1" source="s2" target="s3"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6d8496;endArrow=block;" edge="1" parent="1" source="s3" target="g"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c4" value="prior review events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d8a849;fontColor=#8a671e;dashed=1;endArrow=block;" edge="1" parent="1" source="m1" target="m2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c5" value="injected into session context" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d8a849;fontColor=#8a671e;dashed=1;endArrow=block;" edge="1" parent="1" source="m2" target="s2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c6" value="checkpoint state" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9b80c7;fontColor=#6a4d8a;dashed=1;endArrow=both;" edge="1" parent="1" source="m3" target="g"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c7" value="new turn / decision" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4d8d80;fontColor=#28665a;dashed=1;endArrow=block;" edge="1" parent="1" source="m4" target="m1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="c8" value="record after response" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4d8d80;fontColor=#28665a;dashed=1;endArrow=block;" edge="1" parent="1" source="g" target="m4"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

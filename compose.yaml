@@ -9,3 +9,4 @@ services:
       PORT: 8787
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
+      REPLY_FROM_NAME: ${REPLY_FROM_NAME:-Accounts Payable}

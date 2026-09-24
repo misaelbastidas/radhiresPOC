@@ -72,6 +72,7 @@ function dateValue(raw) {
 export function parseInvoiceFields(rawText, pages = []) {
   const text = normalizeText(rawText);
   const result = { lineItems: [], warnings: [] };
+  const isCreditMemo = /credit\s*memo|nota\s+de\s+cr[eé]dito/i.test(text);
   const matches = {
     vendorName: firstMatch(text, [/(?:vendor|supplier|from)\s*[:#-]?\s*([A-Za-z0-9 &.,'-]{3,}?)(?=\s+(?:tax\s*id|vat|rfc|invoice|date|purchase|currency|service|subtotal|tax|total|payment)\b|$)/i]),
     vendorTaxId: firstMatch(text, /(?:tax\s*id|vat|rfc)\s*[:#-]?\s*([A-Z0-9-]{5,})/i),
@@ -79,10 +80,14 @@ export function parseInvoiceFields(rawText, pages = []) {
     invoiceDate: firstMatch(text, [/(?:invoice\s*date|date\s*issued|fecha)\s*[:#-]?\s*([0-9]{1,4}[/-][0-9]{1,2}[/-][0-9]{1,4})/i]),
     purchaseOrder: firstMatch(text, [/(?:purchase\s*order|po\s*(?:number|no\.?|#)?|orden\s*de\s*compra)\s*[:#-]?\s*([A-Z0-9][A-Z0-9/_-]{2,})/i]),
     currency: firstMatch(text, [/(?:currency|moneda)\s*[:#-]?\s*(USD|EUR|MXN|GBP|CAD|\$|€|£)/i]),
-    servicePeriod: firstMatch(text, [/(?:service\s*period|period|billing\s*period|periodo)\s*[:#-]?\s*([^;|]{4,40}?)(?=\s+(?:subtotal|tax|total|payment)\b|$)/i]),
+    servicePeriod: firstMatch(text, [/(?:service\s*period|period|billing\s*period|periodo)\s*[:#-]?\s*([^;|]{4,40}?)(?=\s+(?:line\s*item|subtotal|tax|total|payment)\b|$)/i]),
     paymentTerms: firstMatch(text, [/(?:payment\s*terms|terms|condiciones)\s*[:#-]?\s*([^;|]{2,30}?)(?=\s+(?:subtotal|tax|total)\b|$)/i])
   };
 
+  if (/purchase\s+order\s+(?:was\s+)?not\s+(?:included|provided|listed)|without\s+(?:a\s+)?purchase\s+order|no\s+purchase\s+order/i.test(text)) {
+    matches.purchaseOrder = null;
+  }
+  result.documentType = isCreditMemo ? 'credit-memo' : 'invoice';
   for (const key of ['vendorName', 'vendorTaxId', 'invoiceNumber', 'purchaseOrder', 'currency', 'servicePeriod', 'paymentTerms']) {
     const match = matches[key];
     result[key] = field(match?.value || null, match ? 0.94 : 0, match?.evidence || null, pages[0]?.page || 1);
@@ -95,7 +100,7 @@ export function parseInvoiceFields(rawText, pages = []) {
     total: ['total due', 'amount due', 'grand total', 'total']
   })) {
     const labelPattern = labels.join('|');
-    const match = text.match(new RegExp(`\\b(?:${labelPattern})\\b\\s*[:#-]?\\s*([A-Z$€£]{0,4}\\s*[0-9][0-9.,]*)`, 'i'));
+    const match = text.match(new RegExp(`\\b(?:${labelPattern})\\b\\s*[:#-]?\\s*([A-Z$€£]{0,4}\\s*-?[0-9][0-9.,]*)`, 'i'));
     const amount = parseAmount(match?.[1]);
     result[key] = field(amount, amount != null ? 0.91 : 0, match?.[0] ? normalizeText(match[0]) : null, pages[0]?.page || 1);
   }
@@ -132,6 +137,7 @@ function closeAmounts(first, second) {
 
 export function reconcileExtractions(deterministic, model) {
   const reconciled = { lineItems: [], warnings: [] };
+  reconciled.documentType = deterministic?.documentType || model?.documentType || 'invoice';
   for (const key of FIELD_KEYS) {
     const deterministicValue = valueOf(deterministic, key);
     const modelValue = valueOf(model, key);
@@ -164,11 +170,25 @@ function tokenOverlap(first, second) {
 }
 
 export function scoreDuplicate(first, second) {
+  if (valueOf(first, 'documentType') === 'credit-memo' || valueOf(second, 'documentType') === 'credit-memo') {
+    return {
+      score: 0,
+      classification: 'not-duplicate',
+      label: 'Not a duplicate',
+      signals: ['Credit memo is not a payable invoice'],
+      recurring: false,
+      creditMemo: true
+    };
+  }
   const signals = [];
   let score = 0;
   if (normalizeComparable(valueOf(first, 'vendorName')) && normalizeComparable(valueOf(first, 'vendorName')) === normalizeComparable(valueOf(second, 'vendorName'))) {
     score += 0.22;
     signals.push('Same vendor');
+  }
+  if (normalizeComparable(valueOf(first, 'vendorTaxId')) && normalizeComparable(valueOf(first, 'vendorTaxId')) === normalizeComparable(valueOf(second, 'vendorTaxId'))) {
+    score += 0.04;
+    signals.push('Same tax ID');
   }
   if (normalizeComparable(valueOf(first, 'invoiceNumber')) && normalizeComparable(valueOf(first, 'invoiceNumber')) === normalizeComparable(valueOf(second, 'invoiceNumber'))) {
     score += 0.36;
@@ -224,12 +244,12 @@ export function getDemoDocuments() {
     reconciled: fields,
     source: 'demo'
   });
-  const common = (invoiceNumber, date, period, total, evidence) => ({
-    vendorName: demoField('Northstar Office Supply', evidence),
-    vendorTaxId: demoField('US-84-0194421', 'Tax ID: US-84-0194421'),
+  const common = (invoiceNumber, date, period, total, evidence, vendor = 'AutoMotion Parts', taxId = 'MX-AMP-840194', purchaseOrder = 'PO-8841') => ({
+    vendorName: demoField(vendor, evidence),
+    vendorTaxId: demoField(taxId, `Tax ID: ${taxId}`),
     invoiceNumber: demoField(invoiceNumber, `Invoice number: ${invoiceNumber}`),
     invoiceDate: demoField(date, `Invoice date: ${date}`),
-    purchaseOrder: demoField('PO-8841', 'Purchase order: PO-8841'),
+    purchaseOrder: demoField(purchaseOrder, `Purchase order: ${purchaseOrder}`),
     currency: demoField('USD', 'Currency: USD'),
     subtotal: demoField(total - 240, `Subtotal: ${(total - 240).toFixed(2)}`),
     tax: demoField(240, 'Tax: 240.00'),
@@ -239,13 +259,15 @@ export function getDemoDocuments() {
     lineItems: [],
     warnings: []
   });
-  const firstNotes = `NORTHSTAR OFFICE SUPPLY\nTax ID: US-84-0194421\nInvoice number: NS-1042\nInvoice date: 2026-02-12\nPurchase order: PO-8841\nCurrency: USD\nService period: Jan 2026\nSubtotal: 1,260.00\nTax: 240.00\nTotal due: 1,500.00\nPayment terms: Net 30`;
-  const secondNotes = `NORTHSTAR OFFICE SUPPLY\nTax ID: US-84-0194421\nInvoice number: NS-1042\nInvoice date: 2026-02-14\nPurchase order: PO-8841\nCurrency: USD\nService period: Jan 2026\nSubtotal: 1,260.00\nTax: 240.00\nTotal due: 1,500.00\nPayment terms: Net 30`;
-  const thirdNotes = `NORTHSTAR OFFICE SUPPLY\nTax ID: US-84-0194421\nInvoice number: NS-1043\nInvoice date: 2026-03-12\nPurchase order: PO-8841\nCurrency: USD\nService period: Feb 2026\nSubtotal: 1,260.00\nTax: 240.00\nTotal due: 1,500.00\nPayment terms: Net 30`;
+  const firstNotes = `AUTOMOTION PARTS\nTax ID: MX-AMP-840194\nInvoice number: AM-2026-1042\nInvoice date: 2026-02-12\nPurchase order: PO-8841\nCurrency: USD\nService period: Jan 2026\nSubtotal: 1,260.00\nTax: 240.00\nTotal due: 1,500.00\nPayment terms: Net 30\nLine item: BP-442 brake pad set, quantity 12`;
+  const secondNotes = `AUTOMOTION PARTS\nTax ID: MX-AMP-840194\nInvoice number: AM-2026-1042\nInvoice date: 2026-02-14\nPurchase order: PO-8841\nCurrency: USD\nService period: Jan 2026\nSubtotal: 1,260.00\nTax: 240.00\nTotal due: 1,500.00\nPayment terms: Net 30\nLine item: BP-442 brake pad set, quantity 12`;
+  const thirdNotes = `AUTOMOTION PARTS\nTax ID: MX-AMP-840194\nInvoice number: AM-2026-1043\nInvoice date: 2026-03-12\nPurchase order: PO-8841\nCurrency: USD\nService period: Feb 2026\nSubtotal: 1,260.00\nTax: 240.00\nTotal due: 1,500.00\nPayment terms: Net 30\nLine item: BP-442 brake pad set, quantity 12`;
   return [
-    make('inv-1042-a', 'northstar-invoice-1042.pdf', common('NS-1042', '2026-02-12', 'Jan 2026', 1500, 'Invoice number: NS-1042'), firstNotes),
-    make('inv-1042-b', 'northstar-invoice-1042-resubmitted.pdf', common('NS-1042', '2026-02-14', 'Jan 2026', 1500, 'Invoice number: NS-1042'), secondNotes),
-    make('inv-1043', 'northstar-invoice-1043.pdf', common('NS-1043', '2026-03-12', 'Feb 2026', 1500, 'Invoice number: NS-1043'), thirdNotes)
+    make('inv-1042-a', 'automotion-invoice-1042.pdf', common('AM-2026-1042', '2026-02-12', 'Jan 2026', 1500, 'Invoice number: AM-2026-1042'), firstNotes),
+    make('inv-1042-b', 'automotion-invoice-1042-resubmitted.pdf', common('AM-2026-1042', '2026-02-14', 'Jan 2026', 1500, 'Invoice number: AM-2026-1042'), secondNotes),
+    make('inv-1043', 'automotion-invoice-1043.pdf', common('AM-2026-1043', '2026-03-12', 'Feb 2026', 1500, 'Invoice number: AM-2026-1043'), thirdNotes),
+    make('inv-boreal-mar', 'boreal-maintenance-march.pdf', common('BF-2026-031', '2026-03-03', 'Mar 2026', 1500, 'Invoice number: BF-2026-031', 'Boreal Fleet Maintenance', 'MX-BFM-442981', 'PO-FLEET-22'), firstNotes.replace('AUTOMOTION PARTS', 'BOREAL FLEET MAINTENANCE').replace('Tax ID: MX-AMP-840194', 'Tax ID: MX-BFM-442981').replace('AM-2026-1042', 'BF-2026-031').replace('PO-8841', 'PO-FLEET-22').replace('BP-442 brake pad set, quantity 12', 'Fleet inspection and maintenance, monthly service')),
+    make('inv-boreal-apr', 'boreal-maintenance-april.pdf', common('BF-2026-032', '2026-04-03', 'Apr 2026', 1500, 'Invoice number: BF-2026-032', 'Boreal Fleet Maintenance', 'MX-BFM-442981', 'PO-FLEET-22'), firstNotes.replace('AUTOMOTION PARTS', 'BOREAL FLEET MAINTENANCE').replace('Tax ID: MX-AMP-840194', 'Tax ID: MX-BFM-442981').replace('AM-2026-1042', 'BF-2026-032').replace('PO-8841', 'PO-FLEET-22').replace('Jan 2026', 'Apr 2026').replace('BP-442 brake pad set, quantity 12', 'Fleet inspection and maintenance, monthly service'))
   ];
 }
 

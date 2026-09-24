@@ -1,0 +1,12 @@
+Vendor: Boreal Fleet Maintenance
+Tax ID: MX-BFM-442981
+Invoice number: BF-2026-031
+Invoice date: 2026-03-03
+Purchase order: PO-FLEET-22
+Currency: USD
+Service period: Mar 2026
+Line item: Fleet inspection and maintenance | Quantity: 1 | Unit price: 1,500.00 | Line amount: 1,500.00
+Subtotal: 1,500.00
+Tax: 240.00
+Total due: 1,740.00
+Payment terms: Net 30

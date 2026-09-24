@@ -1,4 +1,0 @@
-From: billing@northstar.example
-Subject: Invoice NS-1042 attached
-
-Please find attached our January invoice. Net 30 terms. This message was sent before the later resend.

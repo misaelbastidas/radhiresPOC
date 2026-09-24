@@ -1,0 +1,12 @@
+Vendor: Ruta Norte Logistics
+Tax ID: MX-RNL-501290
+Invoice number: RN-3901
+Invoice date: 2026-03-06
+Currency: USD
+Service period: Mar 2026
+Line item: Freight, Monterrey to Cancun lane | Quantity: 1 | Unit price: 680.00 | Line amount: 680.00
+Subtotal: 680.00
+Tax: 108.80
+Total due: 788.80
+Payment terms: Net 15
+Warning: Purchase order was not included in the supplier document.

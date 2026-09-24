@@ -1,0 +1,4 @@
+From: billing@fleetfix.example
+Subject: Invoice FF-2026-031 - wiper blades
+
+Final fleet replenishment invoice attached. No prior invoice is referenced in this message.

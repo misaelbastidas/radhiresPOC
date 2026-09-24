@@ -1,4 +1,0 @@
-From: billing@acme.example
-Subject: Corrected invoice INV-8812
-
-Please ignore INV-8811. The corrected invoice is attached because the quantity on the first version was wrong.

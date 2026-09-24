@@ -2,7 +2,8 @@ import http from 'node:http';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getAgentCapabilities, getReviewMemory, runAgentTurn, saveReviewDecision } from './server/agentEngine.mjs';
+import { getAgentCapabilities, getHarnessContract, getReviewMemory, runAgentTurnWithModel, saveReviewDecision } from './server/agentEngine.mjs';
+import { validateAgentInput, validateAgentOutput, validateModelInput } from './server/harnessValidation.mjs';
 import { inboxFixtures } from './src/lib/inboxFixtures.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -142,7 +143,7 @@ async function extractWithClaude(payload) {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514',
+      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
       max_tokens: 2400,
       temperature: 0,
       system: extractionPrompt,
@@ -163,7 +164,7 @@ async function extractWithClaude(payload) {
   const text = (body.content || []).filter((item) => item.type === 'text').map((item) => item.text).join('\n');
   return {
     provider: 'anthropic',
-    model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514',
+    model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
     result: normalizeModelResult(parseJsonFromText(text))
   };
 }
@@ -178,6 +179,7 @@ async function serveStatic(request, response, pathname) {
     const types = {
       '.html': 'text/html; charset=utf-8',
       '.js': 'text/javascript; charset=utf-8',
+      '.mjs': 'text/javascript; charset=utf-8',
       '.css': 'text/css; charset=utf-8',
       '.svg': 'image/svg+xml',
       '.json': 'application/json; charset=utf-8',
@@ -195,6 +197,21 @@ async function serveStatic(request, response, pathname) {
   }
 }
 
+async function serveSampleFile(response, fileName) {
+  const sampleRoot = path.join(__dirname, 'samples', 'autoparts', 'pdf');
+  const safeName = path.basename(fileName || '');
+  if (!safeName || safeName !== fileName || !safeName.toLowerCase().endsWith('.pdf')) {
+    return sendJson(response, 400, { error: 'Only sample PDF names are allowed.' });
+  }
+  try {
+    const file = await fs.readFile(path.join(sampleRoot, safeName));
+    response.writeHead(200, { 'content-type': 'application/pdf', 'cache-control': 'no-store' });
+    response.end(file);
+  } catch {
+    sendJson(response, 404, { error: 'Sample PDF not found.' });
+  }
+}
+
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
   try {
@@ -202,7 +219,11 @@ const server = http.createServer(async (request, response) => {
       return sendJson(response, 200, {
         ok: true,
         modelConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
-        model: process.env.ANTHROPIC_MODEL || null
+        model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
+        stack: {
+          langChain: true,
+          langGraph: true
+        }
       });
     }
 
@@ -211,13 +232,17 @@ const server = http.createServer(async (request, response) => {
     }
 
     if (url.pathname === '/api/capabilities' && request.method === 'GET') {
-      return sendJson(response, 200, { capabilities: getAgentCapabilities() });
+      return sendJson(response, 200, { capabilities: getAgentCapabilities(), harness: getHarnessContract() });
     }
 
     if (url.pathname === '/api/agent/run' && request.method === 'POST') {
       const payload = JSON.parse(await readBody(request, 2 * 1024 * 1024));
-      if (!payload.threadId || !payload.message) return sendJson(response, 400, { error: 'threadId and message are required.' });
-      return sendJson(response, 200, runAgentTurn(payload));
+      const input = validateAgentInput(payload);
+      if (!input.ok) return sendJson(response, 400, { error: input.error });
+      const output = await runAgentTurnWithModel(input.value);
+      const validation = validateAgentOutput(output);
+      if (!validation.ok) return sendJson(response, 500, { error: validation.error });
+      return sendJson(response, 200, output);
     }
 
     if (url.pathname === '/api/reviews' && request.method === 'POST') {
@@ -232,11 +257,14 @@ const server = http.createServer(async (request, response) => {
 
     if (url.pathname === '/api/model-extract' && request.method === 'POST') {
       const payload = JSON.parse(await readBody(request));
-      if ((!Array.isArray(payload.pages) || payload.pages.length === 0) && !payload.text) {
-        return sendJson(response, 400, { error: 'At least one rendered page is required.' });
-      }
-      const extraction = await extractWithClaude(payload);
+      const input = validateModelInput(payload);
+      if (!input.ok) return sendJson(response, 400, { error: input.error });
+      const extraction = await extractWithClaude(input.value);
       return sendJson(response, 200, extraction);
+    }
+
+    if (url.pathname === '/api/sample-file' && request.method === 'GET') {
+      return serveSampleFile(response, url.searchParams.get('name'));
     }
 
     if (request.method === 'GET') return serveStatic(request, response, url.pathname);
